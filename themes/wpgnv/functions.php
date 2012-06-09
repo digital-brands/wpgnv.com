@@ -69,6 +69,8 @@ function wpgnv_user_registration_form() {
 <?php
 }
 
+/* VERIFY AND CREATE USER
+******************************************************************************/
 function wpgnv_verify_and_create_user() {
 	global $wpgnv_error;
 	global $wpgnv_success;
@@ -313,16 +315,16 @@ function wpgnv_create_ideas_display() {
     $returner .= '<span class="text">' . get_the_title() . '</span>';
     $returner .= "</div></div><!-- end .title -->";
 
-	if ( is_user_logged_in() ) {
+	//if ( is_user_logged_in() ) {
 	$returner .= "<div class='one columns omega'><div class='vote'>";
 		$returner .= "<div id='upvote' postID='$post->ID'>";
 		$returner .= "</div><!-- end #upvote -->";
 		$returner .= "<div id='downvote' postID='$post->ID'>";
 		$returner .= "</div>";
 		$returner .= "</div></div><!-- end .vote -->";
-	} else {
-		$returner .= "<div style='padding:5px;'>Login or Register to Vote</div>";
-	}
+	//} else {
+	//	$returner .= "<div style='padding:5px;'>Login or Register to Vote</div>";
+	//}
 
     $returner .= "</div><!-- end .idea -->";
     $returner .= "</div><!-- end .row -->";

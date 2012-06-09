@@ -4,11 +4,11 @@
     -------------------------------------------------------------------------->
     <section class="hero-section box-shadow-2">
         <?php
-            if ( is_user_logged_in() ) {  
+            //if ( is_user_logged_in() ) {  
                 wpgnv_generate_hero_section(); 
-            } else {
-                wpgnv_generate_hero_registration();
-            }
+           // } else {
+             //   wpgnv_generate_hero_registration();
+            //}
         ?>
 	</section><!-- end .hero-section -->
 
@@ -19,9 +19,9 @@
 	<!-- OPEN/CLOSE TAB
 	-------------------------------------------------------------------------->
     <?php
-        if ( is_user_logged_in() ) {
+        //if ( is_user_logged_in() ) {
             wpgnv_generate_open_close();
-        }
+        //}
     ?>
 
 	<!-- MAIN CONTENT
