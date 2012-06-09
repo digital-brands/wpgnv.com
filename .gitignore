@@ -3,6 +3,7 @@
 index.php
 themes/twentyten/*
 themes/twentyeleven/*
+*.swp
 
 # Compiled source #
 ###################
