@@ -1,5 +1,5 @@
 # WPgnv.com Code
-These files comprise the /wp-content of a WordPress installation.
+These files comprise the /wp-content of a WordPress installation. To use this repo you will need to install WordPress on your server along with a database.  Then simply clone this repo into /wp-content.
 
 - - -
 ## File Structure
