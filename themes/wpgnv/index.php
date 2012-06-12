@@ -33,11 +33,12 @@
 	-------------------------------------------------------------------------->
     <section class="main-content">
         <div class="container">
-			<!-- Add in the ideas display -->
-			<?php wpgnv_display_ideas(); ?>
 
 			<!-- Add in the form -->
 			<?php wpgnv_display_form(); ?>
+			
+			<!-- Add in the ideas display -->
+			<?php wpgnv_display_ideas(); ?>
  
         </div><!-- end .container -->
     </section><!-- end .main-content -->

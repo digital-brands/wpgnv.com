@@ -1,4 +1,11 @@
-// Open/Close
+// Add New Idea Handler
+jQuery( document ).ready( function() {
+	jQuery( '#add-idea' ).on( 'click', function() {
+		jQuery( '.idea-form-row' ).fadeToggle();
+	});
+});
+
+// Open/Close Handler - Also created cookie if it doesn't already exist
 jQuery(document).ready( function() {
     var cookie = JSON.parse( jQuery.cookie( 'wpgnv' ) );
     if ( null == cookie ) {

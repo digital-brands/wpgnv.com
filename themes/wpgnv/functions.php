@@ -3,11 +3,11 @@
  *******************************************************************************/
 function wpgnv_display_form() {
 ?>
-	<div class='row'>
+	<div style='display: none;' class='row idea-form-row'>
 		<div class='idea sixteen columns alpha omega border-radius-4 box-shadow-5-light'>
 			<form method="post" action="" class='idea-form'>
 				<h1 class='tk-nimbus-sans-condensed'>Add your own idea!</h1>
-				<p>Just fill out the form below to enter your own idea for a MeetUp topic.  These topics will be moderated and then added to the list.</p>
+				<p>First, make sure that none of the ideas already submitted contain your idea.  You can just fill out the form below to enter your own idea for a MeetUp topic.  These topics will be moderated and then added to the list.</p>
 				<label for="title">TITLE</label>
 				<textarea placeholder="enter your idea here" type="text" name="post-title"></textarea>
 				<?php wp_nonce_field( 'wpgnv_new_idea', 'wpgnv_new_idea' ); ?>
@@ -273,7 +273,26 @@ function wpgnv_save_ideas_meta($post_id) {
     }
 
     $total = $upvotes + $downvotes;
-    update_post_meta( $post_id, 'total-vote', $total ); 
+	update_post_meta( $post_id, 'total-vote', $total );
+
+}
+
+/* Set up an e-mail when a new Idea is Pending
+******************************************************************************/
+add_action( 'save_post', 'wpgnv_mail_on_post' );
+function wpgnv_mail_on_post( $post_id ) {
+	// Set up an e-mail alerting administrators of new post.
+	if ( 'pending' == get_post_status( $post_id ) ) {
+		$post_title = get_the_title( $post_id );
+		$subject = 'A new Idea has been submitted on wpgnv.com!';
+		$message = "Please moderate this Idea as soon as possible.\n\n";
+		$message .= "TITLE: $post_title \n\n";	
+		$message .= "Link: http://wpgnv.com/wp-admin";
+		//$message = get_post_status( $post_id );
+		wp_mail( 'ryan@digitalbrands.com', $subject, $message );
+		wp_mail( 'admin@wpbeginner.com', $subject, $message );
+		wp_mail( 'toby@digitalbrands.com', $subject, $message );
+	}
 }
 
 /* GENERATE HERO SECTION
@@ -290,7 +309,7 @@ function wpgnv_generate_hero_section() {
         </div><!-- end .left -->
   
         <div class="eight columns omega right">
-            <p>Below you will find suggestions from our group members.  Please take some time to look through them and vote on the next MeetUp's topic. You can also add your own topic idea by filling out the form at the bottom of the page.</p>
+            <p>Below you will find suggestions from our group members.  Please take some time to look through them and vote on the next MeetUp's topic. You can also add your own topic by clicking on the '<strong>+ Add Idea</strong>' tab.  You can vote up to <strong>three times per day.</strong></p>
         <?php get_search_form(); ?>
         </div><!-- end .columns --> 
     </div><!-- end .container -->
@@ -350,7 +369,13 @@ function wpgnv_generate_open_close() {
             <div id="open-close" class="box-shadow-5">
                 <span>Close</span>
             </div><!-- end #open-close -->
-        </div><!-- .columns -->
+		</div><!-- .columns -->
+
+		<div class="one columns omega">
+			<div id="add-idea" class="box-shadow-5">
+				<span>+ Add Idea</span>
+			</div><!-- end #add-idea -->
+		</div><!-- end .columns -->
     </div><!-- end .container -->
 <?php
 }

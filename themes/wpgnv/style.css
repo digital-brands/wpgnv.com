@@ -403,10 +403,13 @@ header .menu a:hover {
     text-shadow: #000 1px 1px 0px
 }
 
-#open-close {
+#open-close, #add-idea {
     background-color: #6096A3;
     color: #fff;
     cursor: pointer;
+	padding-left: 5px;
+	padding-right: 5px;
+	margin-left: 10px;
  
     -webkit-border-radius: 0px 0px 4px 4px;
     -moz-border-radius: 0px 0px 4px 4px;
