@@ -10,3 +10,6 @@ These files comprise the /wp-content of a WordPress installation. To use this re
 * Containes the actual WordPress theme for wpgnv.com
 	* /wpgnv
 		* /images - Contains the images used in wpgnv.com
+
+### /backups
+* Contains database backups for use by others or for re-installation
