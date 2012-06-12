@@ -1,5 +1,51 @@
 <?php
+/* DISPLAY THE FORM SUBMISSION
+ *******************************************************************************/
+function wpgnv_display_form() {
+?>
+	<div class='row'>
+		<div class='idea sixteen columns alpha omega border-radius-4 box-shadow-5-light'>
+			<form method="post" action="" class='idea-form'>
+				<h1 class='tk-nimbus-sans-condensed'>Add your own idea!</h1>
+				<p>Just fill out the form below to enter your own idea for a MeetUp topic.  These topics will be moderated and then added to the list.</p>
+				<label for="title">TITLE</label>
+				<textarea placeholder="enter your idea here" type="text" name="post-title"></textarea>
+				<?php wp_nonce_field( 'wpgnv_new_idea', 'wpgnv_new_idea' ); ?>
+				<button type="submit">Submit Your Idea</button>
+			</form><!-- end .idea-form -->
+		</div><!-- end .sixteen -->
+	</div>
+<?php
+}
 
+/* PROCESS THE NEW IDEA FORM 
+*******************************************************************************/
+function wpgnv_process_form() {
+	if ( empty( $_POST['post-title'] ) && wp_verify_nonce( $_POST['wpgnv_new_idea'], 'wpgnv_new_idea' ) ) {
+		global $wpgnv_error;
+		$wpgnv_error = 'You left the Idea field empty. Please enter an Idea and THEN submit it.';
+		return;
+	}
+	if ( isset( $_POST ) && wp_verify_nonce( $_POST['wpgnv_new_idea'], 'wpgnv_new_idea' ) ) {
+		$post_args = array (
+			'post_type' => 'ideas',
+			'post_status' => 'pending',
+			'post_title' => esc_html( $_POST['post-title'] )
+		);
+		$post_id = wp_insert_post( $post_args );
+
+		if ( is_wp_error( $post_id ) ) {
+			global $wpgnv_error;
+			$wpgnv_error = 'Sorry, there was an error processing your new idea.';
+		} else {
+			global $wpgnv_success;
+			$wpgnv_success = 'Awesome!  Your idea has been submitted and is awaiting moderation.';
+		}
+	}	
+}
+
+/* DISPLAY THE CURRENT IDEAS
+ ******************************************************************************/
 function wpgnv_display_ideas() {
 ?>
 	<!-- LOOP PREPARATION ( WP QUERY )
@@ -244,7 +290,7 @@ function wpgnv_generate_hero_section() {
         </div><!-- end .left -->
   
         <div class="eight columns omega right">
-            <p>Below you will find suggestions from our group members.  Please take some time to look through them and vote on the next MeetUp's topic.</p>
+            <p>Below you will find suggestions from our group members.  Please take some time to look through them and vote on the next MeetUp's topic. You can also add your own topic idea by filling out the form at the bottom of the page.</p>
         <?php get_search_form(); ?>
         </div><!-- end .columns --> 
     </div><!-- end .container -->

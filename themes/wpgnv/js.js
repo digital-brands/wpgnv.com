@@ -4,9 +4,12 @@ jQuery(document).ready( function() {
     if ( null == cookie ) {
         cookie = new Object();
         cookie.heroStatus = 'open';
-        jQuery.cookie( 'wpgnv', JSON.stringify( cookie ) );
+		cookie.votesLeft = 3;
+        jQuery.cookie( 'wpgnv', JSON.stringify( cookie ), { expires: 1 } );
     } else if ( 'closed' == cookie.heroStatus ) {
         jQuery( '.hero-section' ).hide();
+		cookie.heroStatus = 'open';
+		jQuery( '#open-close span' ).html( 'Open' );
     }
 
     jQuery( '#open-close' ).on( 'click', function( event ) {
@@ -19,7 +22,7 @@ jQuery(document).ready( function() {
             cookie.heroStatus = 'open';
         }
 
-        jQuery.cookie( 'wpgnv', JSON.stringify( cookie ) );
+        jQuery.cookie( 'wpgnv', JSON.stringify( cookie ), { expires: 1 } );
 
         jQuery( '.hero-section' ).slideToggle();
         var current = jQuery( '#open-close span' ).html();
@@ -29,10 +32,26 @@ jQuery(document).ready( function() {
 
 // Voting jQuery
 jQuery(document).ready(function() {
+
     jQuery( '#upvote, #downvote' ).on( 'click', function( event ) {
-        var postID = jQuery( event.target ).attr( 'postID' );
+
+		// Get the number of Votes Left for this user.
+		var cookie = JSON.parse( jQuery.cookie( 'wpgnv' ) );
+		var votesLeft = cookie.votesLeft;
+		if ( 0 >= votesLeft ) {
+			alert("Sorry, you don't have any votes left for today.  Come back tomorrow if you would like to vote more.");
+			return;
+		}
+
+		// Take a Vote off
+		cookie.votesLeft = cookie.votesLeft - 1;
+		jQuery.cookie( 'wpgnv', JSON.stringify( cookie ), { expires: 1 } );
+
+
+		var postID = jQuery( event.target ).attr( 'postID' );
         var up_or_down = jQuery( event.target ).attr( 'id' );
-        
+    
+
         if ( up_or_down == 'upvote' ) {
             var value = 1;
         } else {

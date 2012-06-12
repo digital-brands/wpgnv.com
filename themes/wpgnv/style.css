@@ -351,6 +351,30 @@ body {
     font-size: 11px;
 }
 
+/* IDEA FORM 
+ *****************************************************************************/
+.idea-form {
+	padding: 10px;
+}
+
+.idea-form h1 {
+	margin-top: 0px;
+	margin-bottom: 5px;
+}
+
+.idea-form p {
+	margin-top: 0px;
+}
+
+.idea-form textarea {
+	width: 95% !important;
+	font-size: 17px !important;
+}
+
+.idea-form button {
+	padding: 10px;
+}
+
 /* HEADER - MENU 
 ******************************************************************************/
 header .menu {
@@ -365,13 +389,13 @@ header .menu .row {
 }
 
 header .menu a {
-    color: #555;
+    color: #777;
     text-decoration: none;
     font-weight: bold;
 }
 
 header .menu a:hover {
-    color: #777;
+    color: #999;
     text-shadow: #000 1px 1px 0px
 }
 
@@ -404,6 +428,8 @@ header .menu a:hover {
 ******************************************************************************/
 .hero-section {
     background-color: #6096a3;
+	background-image: url( 'images/hero-bg.jpg' );
+	background-repeat: repeat;
     color: #fff;
     padding-top: 20px;
     padding-bottom: 20px;
@@ -466,6 +492,7 @@ header .menu a:hover {
         padding-bottom: 5px;
 		padding-right: 5px;
         line-height: 1em;
+		font-size: 1.2em;
     }
 
     /* SCORE

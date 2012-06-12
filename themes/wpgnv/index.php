@@ -1,5 +1,9 @@
 <?php get_header(); ?>
 
+	<!-- PROCESS FORMS 
+	-------------------------------------------------------------------------->
+	<?php wpgnv_process_form(); ?>
+
     <!-- HERO SECTION
     -------------------------------------------------------------------------->
     <section class="hero-section box-shadow-2">
@@ -22,14 +26,18 @@
         //if ( is_user_logged_in() ) {
             wpgnv_generate_open_close();
         //}
-    ?>
+	?>
+
 
 	<!-- MAIN CONTENT
 	-------------------------------------------------------------------------->
     <section class="main-content">
         <div class="container">
+			<!-- Add in the ideas display -->
+			<?php wpgnv_display_ideas(); ?>
 
-		<?php wpgnv_display_ideas(); ?>
+			<!-- Add in the form -->
+			<?php wpgnv_display_form(); ?>
  
         </div><!-- end .container -->
     </section><!-- end .main-content -->
