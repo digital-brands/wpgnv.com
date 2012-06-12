@@ -105,7 +105,7 @@ License URI:
 /* HTML5 Boilerplate and Skeleton Grid are being used.  They are included at the EOF
 ******************************************************************************/
 html {
-    font-family: "Trebuchet MS", Arial, sans-serif !important;
+    font-family: "cronos-pro", Arial, sans-serif !important;
 }
 
 body {
@@ -231,7 +231,7 @@ body {
     font-size: 12px;
     line-height: 12px;
     font-weight: bold;
-    color: #a4a4a4;
+    color: #777;
     text-transform: uppercase;
     float: left;
 
@@ -417,12 +417,14 @@ header .menu a:hover {
 .hero-section .left .text h1 {
     margin: 0px;
     line-height: 75px;
+	text-shadow: 1px 1px 1px #666;
 }
 
 .hero-section .right {
     font-size: 18px;
-    color: #e0e0e0;
+    color: #fff;
     font-weight: 100;
+	text-shadow: 1px 1px 0px #777;
 }
 
 .hero-section .right p {
@@ -479,6 +481,7 @@ header .menu a:hover {
         font-weight: bold;
         line-height: 40px;
         padding-left: 5px;
+		text-shadow: 1px 1px 1px #888;
     }
 
     .main-content .idea .score .positive {
@@ -1078,7 +1081,7 @@ alpha omega     /* Note: Design for a width of 480px */
         -moz-border-radius: 2px;
         -webkit-border-radius: 2px;
         border-radius: 2px;
-        font: 13px "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font: 13px "cronos-pro", Helvetica, Arial, sans-serif;
         color: #777;
         margin: 0;
         max-width: 100%;

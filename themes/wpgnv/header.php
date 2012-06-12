@@ -12,6 +12,10 @@
 	<script type="text/javascript" src="http://use.typekit.com/ugy8zpa.js"></script>
 	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
 
+	<!-- Favicon -->
+	<link rel="shortcut icon" href="<?php bloginfo('stylesheet_directory'); ?>/favicon.ico" />
+
+	<!-- Viewport -->
     <meta name="viewport" content="width=device-width">
 
     <link rel="stylesheet" href="<?php bloginfo( 'stylesheet_url' ); ?>" type="text/css" media="screen" />
@@ -35,22 +39,24 @@
 
                     <!-- LOGIN
                     ---------------------------------------------------------->
-                    <?php if ( is_user_logged_in() ) {
-                        global $user_email;
-                        get_currentuserinfo();
-                        $profile_url = get_home_url() . '/wp-admin/profile.php'; 
-                        echo "<div class='seven columns offset-by-two omega user-logged-in'><a href='$profile_url'>$user_email</a></div>";
-                    } else {
-?>
+					<?php 
+					//if ( is_user_logged_in() ) {
+                    //    global $user_email;
+                    //    get_currentuserinfo();
+                    //    $profile_url = get_home_url() . '/wp-admin/profile.php'; 
+                    //    echo "<div class='seven columns offset-by-two omega user-logged-in'><a href='$profile_url'>$user_email</a></div>";
+                    //} else {
+					?>
+				<!--	
 					<div class="nine columns omega user-not-logged-in">
 	                    <form action="" method="post" class="login-form">
 							<input name="login" placeholder="e-mail" type="email" class="border-radius-30 header-login" />
 							<input name="password" placeholder="password" type="password" class="border-radius-30 header-password" />
 							<button class="login-button">Login</button>
-							<?php wp_nonce_field( 'user_login','user_login' ); ?> 
+							<?php //wp_nonce_field( 'user_login','user_login' ); ?> 
 		                </form>
-					</div><!-- end .user-not-logged-in -->
-                    <?php } ?>
+					</div> --><!-- end .user-not-logged-in -->
+                    <?php //} ?>
                 </div><!-- end .row -->
             </div><!-- end .container -->
         </section><!-- end .menu -->

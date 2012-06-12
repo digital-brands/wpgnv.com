@@ -1,4 +1,29 @@
 <?php
+
+function wpgnv_display_ideas() {
+?>
+	<!-- LOOP PREPARATION ( WP QUERY )
+	---------------------------------------------------------------------->
+	<?php $query_args = array(
+		'post_type' => 'ideas',
+		'order' => 'DES',
+		'meta_key' => 'total-vote',
+		'orderby' => 'meta_value_num'
+	);  
+	$ideas_query = new WP_Query( $query_args );
+	?>
+
+	<!-- THE LOOP
+	---------------------------------------------------------------------->
+	<?php if ( $ideas_query->have_posts() ) : while ( $ideas_query->have_posts() ) : $ideas_query->the_post(); ?>
+		<?php echo wpgnv_create_ideas_display(); ?> 
+	<?php endwhile; else: ?>
+		<p>Sorry, there were no ideas to display.</p>
+	<?php endif; ?>
+	<?php wp_reset_postdata(); ?>
+	<?php
+}
+
 /* INSTRUCTIONS SECTION
  ******************************************************************************/
 function wpgnv_instruction() {
