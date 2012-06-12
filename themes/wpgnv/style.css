@@ -251,14 +251,18 @@ body {
 
 .menu-gradient {
     background: #333;
-    background: -webkit-gradient(linear, 0 0, 0 bottom, from(#333), to(#222));
-    background: -webkit-linear-gradient(#333, #222);
-    background: -moz-linear-gradient(#333, #222);
-    background: -ms-linear-gradient(#333, #222);
-    background: -o-linear-gradient(#333, #222);
-    background: linear-gradient(#333, #222);
-    -pie-background: linear-gradient(#333, #222);
+    background: -webkit-gradient(linear, 0 0, 0 bottom, from(#444), to(#222));
+    background: -webkit-linear-gradient(#444, #222);
+    background: -moz-linear-gradient(#444, #222);
+    background: -ms-linear-gradient(#444, #222);
+    background: -o-linear-gradient(#444, #222);
+    background: linear-gradient(#444, #222);
+    -pie-background: linear-gradient(#444, #222);
     behavior: url(/PIE.htc);
+}
+
+.pull-right {
+	float: right !important;
 }
 
 /* SEARCH 
