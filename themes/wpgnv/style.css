@@ -49,6 +49,10 @@ License URI:
 			padding-left: 10px !important;
         }
 
+		.lt-ie10 .hero-section .left {
+			font-size: 35px !important;
+		}
+
 		#user_email {
 			width: 280px !important;
 		}
@@ -106,6 +110,14 @@ License URI:
 ******************************************************************************/
 html {
     font-family: "cronos-pro", Arial, sans-serif !important;
+}
+
+.lt-ie9 .container {
+	display: none;
+}
+
+.lt-ie9 .main {
+	display: none;
 }
 
 body {
@@ -447,6 +459,10 @@ header .menu a:hover {
     font-weight: bold;
 }
 
+.lt-ie10 .hero-section .left {
+	font-size: 44px;
+}
+
 .hero-section .left .text h1 {
     margin: 0px;
     line-height: 75px;
@@ -779,7 +795,10 @@ td { vertical-align: top; }
    Chrome Frame Prompt
    ========================================================================== */
 
-.chromeframe { margin: 0.2em 0; background: #ccc; color: black; padding: 0.2em 0; }
+.chromeframe { margin: 0; background: black; color: #e8e8e8; padding: 0.2em 0; text-align: center; }
+.chromeframe a { color: #e8e8e8; }
+.chromeframe a:hover { color: #ccc; }
+
 
 
 /* ==|== primary styles =====================================================

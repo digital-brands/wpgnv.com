@@ -1,5 +1,107 @@
 <?php
-/* DISPLAY THE FORM SUBMISSION
+/* ENQUEUES 
+******************************************************************************/
+add_action( 'wp_enqueue_scripts', 'wpgnv_enqueue' );
+function wpgnv_enqueue() {
+    wp_enqueue_script( 'jquery' );
+
+    wp_register_script( 'wpgnv-js', get_stylesheet_directory_uri() . '/js.js', 'jquery', '', true );
+    wp_enqueue_script( 'wpgnv-js' );
+
+    // declare the URL to the file that handles the AJAX request (wp-admin/admin-ajax.php)
+    wp_localize_script( 'wpgnv-js', 'MyAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
+}
+ 
+/* REGISTER IDEA
+******************************************************************************/
+add_action( 'init', 'wpgnv_add_ideas_post_type' );
+function wpgnv_add_ideas_post_type() {
+    $labels = array(
+        'name' => 'Ideas',
+        'singular_name' => 'Idea',
+        'add_new' => 'Add New Idea',
+        'add_new_item' => 'Add New Idea',
+        'edit_item' => 'Edit Idea',
+        'new_item' => 'New Idea',
+        'all_items' => 'All Ideas',
+        'view_item' => 'View Ideas',
+        'search_items' => 'Search Ideas',
+        'not_found' =>  'No ideas found',
+        'not_found_in_trash' => 'No ideas found in Trash', 
+        'parent_item_colon' => '',
+        'menu_name' => 'Ideas'
+    );
+
+    $args = array(
+        'labels' => $labels,
+        'public' => true,
+        'publicly_queryable' => true,
+        'show_ui' => true, 
+        'show_in_menu' => true, 
+        'query_var' => true,
+        'rewrite' => true,
+        'capability_type' => 'post',
+        'has_archive' => true, 
+        'hierarchical' => false,
+        'menu_position' => 2,
+        'supports' => array( 'custom-fields', 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' )
+    );
+
+    register_post_type( 'ideas', $args );
+}
+
+/* SAVE IDEAS META ON POST SAVE
+******************************************************************************/
+add_action( 'save_post', 'wpgnv_save_ideas_meta' );
+function wpgnv_save_ideas_meta($post_id) {
+    $slug = 'ideas';
+
+    /* check whether anything should be done */
+    $_POST += array("{$slug}_edit_nonce" => '');
+    if ( $slug != $_POST['post_type'] ) {
+        return;
+    }
+    if ( !current_user_can( 'edit_post', $post_id ) ) {
+        return;
+    }
+    
+    $upvotes = intval( get_post_meta( $post_id, 'upvotes', true ) );
+    $downvotes = intval( get_post_meta( $post_id, 'downvotes', true ) );
+
+    if ( empty( $upvotes ) ) {
+        $upvotes = 0;
+        add_post_meta( $post_id, 'upvotes', 0, true );
+    }
+    
+    if ( empty( $downvotes ) ) {
+        $downvotes = 0;
+        add_post_meta( $post_id, 'downvotes', 0, true );
+    }
+
+    $total = $upvotes + $downvotes;
+	update_post_meta( $post_id, 'total-vote', $total );
+
+}
+
+/* SET UP AN E-MAIL WHEN A NEW IDEA IS PENDING
+******************************************************************************/
+add_action( 'save_post', 'wpgnv_mail_on_post' );
+function wpgnv_mail_on_post( $post_id ) {
+	// Set up an e-mail alerting administrators of new post.
+	if ( 'pending' == get_post_status( $post_id ) ) {
+		$post_title = get_the_title( $post_id );
+		$subject = 'A new Idea has been submitted on wpgnv.com!';
+		$message = "Please moderate this Idea as soon as possible.\n\n";
+		$message .= "TITLE: $post_title \n\n";	
+		$message .= "Link: http://wpgnv.com/wp-admin";
+		//$message = get_post_status( $post_id );
+		wp_mail( 'ryan@digitalbrands.com', $subject, $message );
+		wp_mail( 'admin@wpbeginner.com', $subject, $message );
+		wp_mail( 'toby@digitalbrands.com', $subject, $message );
+	}
+}
+
+/* DISPLAY THE IDEA FORM
  *******************************************************************************/
 function wpgnv_display_form() {
 ?>
@@ -193,107 +295,6 @@ function wpgnv_verify_user_login() {
 	exit;
 }
 
-/* ENQUEUES 
-******************************************************************************/
-add_action( 'wp_enqueue_scripts', 'wpgnv_enqueue' );
-function wpgnv_enqueue() {
-    wp_enqueue_script( 'jquery' );
-
-    wp_register_script( 'wpgnv-js', get_stylesheet_directory_uri() . '/js.js', 'jquery', '', true );
-    wp_enqueue_script( 'wpgnv-js' );
-
-    // declare the URL to the file that handles the AJAX request (wp-admin/admin-ajax.php)
-    wp_localize_script( 'wpgnv-js', 'MyAjax', array( 'ajaxurl' => admin_url( 'admin-ajax.php' ) ) );
-}
- 
-/* REGISTER IDEA
-******************************************************************************/
-add_action( 'init', 'wpgnv_add_ideas_post_type' );
-function wpgnv_add_ideas_post_type() {
-    $labels = array(
-        'name' => 'Ideas',
-        'singular_name' => 'Idea',
-        'add_new' => 'Add New Idea',
-        'add_new_item' => 'Add New Idea',
-        'edit_item' => 'Edit Idea',
-        'new_item' => 'New Idea',
-        'all_items' => 'All Ideas',
-        'view_item' => 'View Ideas',
-        'search_items' => 'Search Ideas',
-        'not_found' =>  'No ideas found',
-        'not_found_in_trash' => 'No ideas found in Trash', 
-        'parent_item_colon' => '',
-        'menu_name' => 'Ideas'
-    );
-
-    $args = array(
-        'labels' => $labels,
-        'public' => true,
-        'publicly_queryable' => true,
-        'show_ui' => true, 
-        'show_in_menu' => true, 
-        'query_var' => true,
-        'rewrite' => true,
-        'capability_type' => 'post',
-        'has_archive' => true, 
-        'hierarchical' => false,
-        'menu_position' => 2,
-        'supports' => array( 'custom-fields', 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' )
-    );
-
-    register_post_type( 'ideas', $args );
-}
-
-/* SAVE IDEAS META ON POST SAVE
-******************************************************************************/
-add_action( 'save_post', 'wpgnv_save_ideas_meta' );
-function wpgnv_save_ideas_meta($post_id) {
-    $slug = 'ideas';
-
-    /* check whether anything should be done */
-    $_POST += array("{$slug}_edit_nonce" => '');
-    if ( $slug != $_POST['post_type'] ) {
-        return;
-    }
-    if ( !current_user_can( 'edit_post', $post_id ) ) {
-        return;
-    }
-    
-    $upvotes = intval( get_post_meta( $post_id, 'upvotes', true ) );
-    $downvotes = intval( get_post_meta( $post_id, 'downvotes', true ) );
-
-    if ( empty( $upvotes ) ) {
-        $upvotes = 0;
-        add_post_meta( $post_id, 'upvotes', 0, true );
-    }
-    
-    if ( empty( $downvotes ) ) {
-        $downvotes = 0;
-        add_post_meta( $post_id, 'downvotes', 0, true );
-    }
-
-    $total = $upvotes + $downvotes;
-	update_post_meta( $post_id, 'total-vote', $total );
-
-}
-
-/* Set up an e-mail when a new Idea is Pending
-******************************************************************************/
-add_action( 'save_post', 'wpgnv_mail_on_post' );
-function wpgnv_mail_on_post( $post_id ) {
-	// Set up an e-mail alerting administrators of new post.
-	if ( 'pending' == get_post_status( $post_id ) ) {
-		$post_title = get_the_title( $post_id );
-		$subject = 'A new Idea has been submitted on wpgnv.com!';
-		$message = "Please moderate this Idea as soon as possible.\n\n";
-		$message .= "TITLE: $post_title \n\n";	
-		$message .= "Link: http://wpgnv.com/wp-admin";
-		//$message = get_post_status( $post_id );
-		wp_mail( 'ryan@digitalbrands.com', $subject, $message );
-		wp_mail( 'admin@wpbeginner.com', $subject, $message );
-		wp_mail( 'toby@digitalbrands.com', $subject, $message );
-	}
-}
 
 /* GENERATE HERO SECTION
 ******************************************************************************/
