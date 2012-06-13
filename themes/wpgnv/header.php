@@ -37,7 +37,7 @@
                     ?>
 					<!-- Visit GitHub
 					---------------------------------------------------------->
-					<div class="six columns omega offset-by-three">
+					<div class="seven columns omega offset-by-two">
 						<a class="pull-right" href='https://github.com/digital-brands/wpgnv.com'>This site's code can be found on GitHub</a>
 					</div>
 
