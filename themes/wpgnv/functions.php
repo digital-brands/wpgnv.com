@@ -237,7 +237,7 @@ function wpgnv_add_ideas_post_type() {
         'capability_type' => 'post',
         'has_archive' => true, 
         'hierarchical' => false,
-        'menu_position' => 5,
+        'menu_position' => 2,
         'supports' => array( 'custom-fields', 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments' )
     );
 
