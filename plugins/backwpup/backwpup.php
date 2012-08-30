@@ -4,7 +4,7 @@ Plugin Name: BackWPup
 Plugin URI: http://backwpup.com
 Description: WordPress Backup and more...
 Author: Daniel H&uuml;sken
-Version: 2.1.11
+Version: 2.1.15
 Author URI: http://danielhuesken.de
 Text Domain: backwpup
 Domain Path: /lang/
@@ -32,7 +32,7 @@ Domain Path: /lang/
 define('BACKWPUP_PLUGIN_BASEDIR', dirname(plugin_basename(__FILE__)));
 define('BACKWPUP_PLUGIN_BASEURL',plugins_url('',__FILE__));
 //Set Plugin Version
-define('BACKWPUP_VERSION', '2.1.11');
+define('BACKWPUP_VERSION', '2.1.15');
 //Set Min Wordpress Version
 define('BACKWPUP_MIN_WORDPRESS_VERSION', '3.1');
 //Set User Capability
@@ -44,14 +44,6 @@ if (!defined('BACKWPUP_DESTS')) {
 	else 
 		define('BACKWPUP_DESTS', 'FTP,DROPBOX,SUGARSYNC,S3,GSTORAGE,RSC,MSAZURE');
 }
-//Set Dropbox Aplication Keys
-define('BACKWPUP_DROPBOX_APP_KEY', 'q2jbt0unkkc54u2');
-define('BACKWPUP_DROPBOX_APP_SECRET', 't5hlbxtz473hchy');
-//Set SugarSync Aplication Keys
-define('BACKWPUP_SUGARSYNC_ACCESSKEY', 'OTcwNjc5MTI5OTQxMzY1Njc5OA');
-define('BACKWPUP_SUGARSYNC_PRIVATEACCESSKEY', 'NzNmNDMwMDBiNTkwNDY0YzhjY2JiN2E5YWVkMjFmYmI');
-//BackWPup API url
-define('BACKWPUP_API_URL', 'https://api.backwpup.com');
 //load Text Domain
 load_plugin_textdomain('backwpup', false, BACKWPUP_PLUGIN_BASEDIR.'/lang');
 //Load functions file
@@ -93,10 +85,6 @@ if (backwpup_env_checks()) {
 	add_action('admin_bar_menu', 'backwpup_add_adminbar',100);
 	//load ajax functions
 	backwpup_load_ajax();
-	//Disabele WP_Corn
-	$cfg=get_option('backwpup');
-	if (!empty($cfg['disablewpcron']))
-		define('DISABLE_WP_CRON',true);
 	//bypass Google Analytics by Yoast oauth
 	if ( isset($_GET['oauth_token']) && isset($_GET['page']) && $_GET['page'] == 'backwpupeditjob' ) {
 		$_GET['oauth_token_backwpup'] = $_GET['oauth_token'];
@@ -104,4 +92,3 @@ if (backwpup_env_checks()) {
 		unset($_REQUEST['oauth_token']);
 	}
 }
-?>

@@ -21,7 +21,7 @@
  * Amazon DynamoDB removes traditional scalability limitations on data storage while maintaining
  * low latency and predictable performance.
  *
- * @version 2012.04.18
+ * @version 2012.06.21
  * @license See the included NOTICE.md file for complete information.
  * @copyright See the included NOTICE.md file for complete information.
  * @link http://aws.amazon.com/dynamodb/ Amazon DynamoDB
@@ -43,6 +43,26 @@ class AmazonDynamoDB extends CFRuntime
 	const REGION_VIRGINIA = self::REGION_US_E1;
 
 	/**
+	 * Specify the queue URL for the United States West (Northern California) Region.
+	 */
+	const REGION_US_W1 = 'dynamodb.us-west-1.amazonaws.com';
+
+	/**
+	 * Specify the queue URL for the United States West (Northern California) Region.
+	 */
+	const REGION_CALIFORNIA = self::REGION_US_W1;
+
+	/**
+	 * Specify the queue URL for the United States West (Oregon) Region.
+	 */
+	const REGION_US_W2 = 'dynamodb.us-west-2.amazonaws.com';
+
+	/**
+	 * Specify the queue URL for the United States West (Oregon) Region.
+	 */
+	const REGION_OREGON = self::REGION_US_W2;
+
+	/**
 	 * Specify the queue URL for the Europe West (Ireland) Region.
 	 */
 	const REGION_EU_W1 = 'dynamodb.eu-west-1.amazonaws.com';
@@ -51,6 +71,16 @@ class AmazonDynamoDB extends CFRuntime
 	 * Specify the queue URL for the Europe West (Ireland) Region.
 	 */
 	const REGION_IRELAND = self::REGION_EU_W1;
+
+	/**
+	 * Specify the queue URL for the Asia Pacific Southeast (Singapore) Region.
+	 */
+	const REGION_APAC_SE1 = 'dynamodb.ap-southeast-1.amazonaws.com';
+
+	/**
+	 * Specify the queue URL for the Asia Pacific Southeast (Singapore) Region.
+	 */
+	const REGION_SINGAPORE = self::REGION_APAC_SE1;
 
 	/**
 	 * Specify the queue URL for the Asia Pacific Northeast (Tokyo) Region.
@@ -228,31 +258,10 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		$this->api_version = '2011-12-05';
 		$this->hostname = self::DEFAULT_URL;
-		$this->auth_class = 'AuthV3JSON';
+		$this->auth_class = 'AuthV4JSON';
 		$this->operation_prefix = 'x-amz-target:DynamoDB_20111205.';
 
 		parent::__construct($options);
-
-		// Default caching mechanism is required
-		if (!$this->credentials->default_cache_config)
-		{
-			// @codeCoverageIgnoreStart
-			throw new DynamoDB_Exception('The DynamoDB class requires the "default_cache_config" configuration to be set in the config.inc.php file.');
-			// @codeCoverageIgnoreEnd
-		}
-
-		// Configure cache
-		$this->set_cache_config($this->credentials->default_cache_config);
-		$cache_id = $this->key . '_sts_credentials_' . sha1(serialize($options));
-
-		// Instantiate and invoke the cache
-		$cache = new $this->cache_class($cache_id, $this->cache_location, 0, $this->cache_compress);
-		$sts_credentials = $cache->response_manager(array($this, 'cache_sts_credentials'), array($cache, $options));
-
-		// Store the credentials inside the class
-		$this->key        = $sts_credentials['key'];
-		$this->secret_key = $sts_credentials['secret'];
-		$this->auth_token = $sts_credentials['token'];
 	}
 
 
@@ -262,7 +271,7 @@ class AmazonDynamoDB extends CFRuntime
 	/**
 	 * This allows you to explicitly sets the region for the service to use.
 	 *
-	 * @param string $region (Required) The region to explicitly set. Available options are <REGION_US_E1>, <REGION_EU_W1>, <REGION_APAC_NE1>.
+	 * @param string $region (Required) The region to explicitly set. Available options are <REGION_US_E1>, <REGION_US_W1>, <REGION_US_W2>, <REGION_EU_W1>, <REGION_APAC_SE1>, <REGION_APAC_NE1>.
 	 * @return $this A reference to the current instance.
 	 */
 	public function set_region($region)
@@ -481,7 +490,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('BatchGetItem', $opt);
 	}
 
@@ -539,7 +547,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('BatchWriteItem', $opt);
 	}
 
@@ -578,7 +585,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('CreateTable', $opt);
 	}
 
@@ -624,7 +630,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('DeleteItem', $opt);
 	}
 
@@ -646,7 +651,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('DeleteTable', $opt);
 	}
 
@@ -666,7 +670,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('DescribeTable', $opt);
 	}
 
@@ -710,7 +713,6 @@ class AmazonDynamoDB extends CFRuntime
 			$opt['AttributesToGet'] = (is_array($opt['AttributesToGet']) ? $opt['AttributesToGet'] : array($opt['AttributesToGet']));
 		}
 
-		$opt = json_encode($opt);
 		return $this->authenticate('GetItem', $opt);
 	}
 
@@ -729,7 +731,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('ListTables', $opt);
 	}
 
@@ -771,7 +772,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('PutItem', $opt);
 	}
 
@@ -835,7 +835,6 @@ class AmazonDynamoDB extends CFRuntime
 			$opt['AttributesToGet'] = (is_array($opt['AttributesToGet']) ? $opt['AttributesToGet'] : array($opt['AttributesToGet']));
 		}
 
-		$opt = json_encode($opt);
 		return $this->authenticate('Query', $opt);
 	}
 
@@ -890,7 +889,6 @@ class AmazonDynamoDB extends CFRuntime
 			$opt['AttributesToGet'] = (is_array($opt['AttributesToGet']) ? $opt['AttributesToGet'] : array($opt['AttributesToGet']));
 		}
 
-		$opt = json_encode($opt);
 		return $this->authenticate('Scan', $opt);
 	}
 
@@ -947,7 +945,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('UpdateItem', $opt);
 	}
 
@@ -971,7 +968,6 @@ class AmazonDynamoDB extends CFRuntime
 	{
 		if (!$opt) $opt = array();
 		
-		$opt = json_encode($opt);
 		return $this->authenticate('UpdateTable', $opt);
 	}
 }

@@ -127,7 +127,7 @@ class BackWPup_Backups_Table extends WP_List_Table {
   
   function get_bulk_actions() {
     $actions = array();
-    $actions['delete'] = __( 'Delete' );
+    $actions['delete'] = __( 'Delete','backwpup' );
     return $actions;
   }
 
@@ -167,7 +167,7 @@ class BackWPup_Backups_Table extends WP_List_Table {
             $jobdest[]=$jobid.','.$dest;
           if ($dest=='MSAZURE' and !empty($jobvalue['msazureHost']) and !empty($jobvalue['msazureAccName']) and !empty($jobvalue['msazureKey']) and !empty($jobvalue['msazureContainer']))
             $jobdest[]=$jobid.','.$dest;
-          if ($dest=='SUGARSYNC' and !empty($jobvalue['sugarpass']) and !empty($jobvalue['sugarpass']))
+          if ($dest=='SUGARSYNC' and !empty($jobvalue['sugarrefreshtoken']))
             $jobdest[]=$jobid.','.$dest;          
         }
 
@@ -224,7 +224,7 @@ class BackWPup_Backups_Table extends WP_List_Table {
         case 'file':
           $r .= "<td $attributes><strong>".$backup['filename']."</strong>";
           $actions = array();
-          $actions['delete'] = "<a class=\"submitdelete\" href=\"" . wp_nonce_url(backwpup_admin_url('admin.php').'?page=backwpupbackups&action=delete&jobdest='.$this->jobid.','.$this->dest.'&paged='.$this->get_pagenum().'&backupfiles[]='.esc_attr($backup['file']), 'bulk-backups') . "\" onclick=\"if ( confirm('" . esc_js(__("You are about to delete this Backup Archive. \n  'Cancel' to stop, 'OK' to delete.","backwpup")) . "') ) { return true;}return false;\">" . __('Delete') . "</a>";
+          $actions['delete'] = "<a class=\"submitdelete\" href=\"" . wp_nonce_url(backwpup_admin_url('admin.php').'?page=backwpupbackups&action=delete&jobdest='.$this->jobid.','.$this->dest.'&paged='.$this->get_pagenum().'&backupfiles[]='.esc_attr($backup['file']), 'bulk-backups') . "\" onclick=\"if ( confirm('" . esc_js(__("You are about to delete this Backup Archive. \n  'Cancel' to stop, 'OK' to delete.","backwpup")) . "') ) { return true;}return false;\">" . __('Delete','backwpup') . "</a>";
           $actions['download'] = "<a href=\"" . wp_nonce_url($backup['downloadurl'], 'download-backup') . "\">" . __('Download','backwpup') . "</a>";
           $r .= $this->row_actions($actions);
           $r .= "</td>";
@@ -290,7 +290,7 @@ function backwpup_get_backup_files($jobid,$dest) {
   if ($dest=='DROPBOX' and !empty($jobvalue['dropetoken']) and !empty($jobvalue['dropesecret'])) {
     require_once(realpath(dirname(__FILE__).'/../libs/dropbox.php'));
     try {
-      $dropbox = new backwpup_Dropbox(BACKWPUP_DROPBOX_APP_KEY, BACKWPUP_DROPBOX_APP_SECRET,'dropbox');
+      $dropbox = new backwpup_Dropbox('dropbox');
       $dropbox->setOAuthTokens($jobvalue['dropetoken'],$jobvalue['dropesecret']);
       $contents = $dropbox->metadata($jobvalue['dropedir']);
       if (is_array($contents)) {
@@ -313,12 +313,12 @@ function backwpup_get_backup_files($jobid,$dest) {
     }
   }
   //Get files/filinfo from Sugarsync
-  if ($dest=='SUGARSYNC' and !empty($jobvalue['sugarpass']) and !empty($jobvalue['sugarpass'])) {
+  if ($dest=='SUGARSYNC' and !empty($jobvalue['sugarrefreshtoken'])) {
     if (!class_exists('SugarSync'))
       require_once (dirname(__FILE__).'/../libs/sugarsync.php');
     if (class_exists('SugarSync')) {
       try {
-        $sugarsync = new SugarSync($jobvalue['sugaruser'],base64_decode($jobvalue['sugarpass']),BACKWPUP_SUGARSYNC_ACCESSKEY, BACKWPUP_SUGARSYNC_PRIVATEACCESSKEY);
+        $sugarsync = new SugarSync($jobvalue['sugarrefreshtoken']);
         $dirid=$sugarsync->chdir($jobvalue['sugardir'],$jobvalue['sugarroot']);
         $user=$sugarsync->user();
         $dir=$sugarsync->showdir($dirid);
@@ -379,10 +379,10 @@ function backwpup_get_backup_files($jobid,$dest) {
           foreach ($contents->body->Contents as $object) {
             $files[$filecounter]['JOBID']=$jobid;
             $files[$filecounter]['DEST']=$dest;
-            $files[$filecounter]['folder']="https://sandbox.google.com/storage/".$jobvalue['GStorageBucket']."/".dirname((string)$object->Key).'/';  
+            $files[$filecounter]['folder']="https://storage.cloud.google.com/".$jobvalue['GStorageBucket']."/".dirname((string)$object->Key).'/';  
             $files[$filecounter]['file']=(string)$object->Key;
             $files[$filecounter]['filename']=basename($object->Key);
-            $files[$filecounter]['downloadurl']="https://sandbox.google.com/storage/".$jobvalue['GStorageBucket']."/".(string)$object->Key;
+            $files[$filecounter]['downloadurl']="https://storage.cloud.google.com/".$jobvalue['GStorageBucket']."/".(string)$object->Key;
             $files[$filecounter]['filesize']=(string)$object->Size;
             $files[$filecounter]['time']=strtotime($object->LastModified);
             $filecounter++;              
@@ -460,27 +460,29 @@ function backwpup_get_backup_files($jobid,$dest) {
     $loginok=false;
     if ($ftp_conn_id) {
       //FTP Login
-      if (@ftp_login($ftp_conn_id, $jobvalue['ftpuser'], base64_decode($jobvalue['ftppass']))) {
+      if (@ftp_login($ftp_conn_id, $jobvalue['ftpuser'], backwpup_base64($jobvalue['ftppass']))) {
         $loginok=true;
       } else { //if PHP ftp login don't work use raw login
         ftp_raw($ftp_conn_id,'USER '.$jobvalue['ftpuser']);
-        $return=ftp_raw($ftp_conn_id,'PASS '.base64_decode($jobvalue['ftppass']));
+        $return=ftp_raw($ftp_conn_id,'PASS '.backwpup_base64($jobvalue['ftppass']));
         if (substr(trim($return[0]),0,3)<=400)
           $loginok=true;
       }
     }
     if ($loginok) {
+	  ftp_chdir($ftp_conn_id, $jobvalue['ftpdir']);
+	  $currentftpdir = rtrim(ftp_pwd($ftp_conn_id),'/').'/';
       ftp_pasv($ftp_conn_id, $jobvalue['ftppasv']);
-      if ($ftpfilelist=ftp_nlist($ftp_conn_id, $jobvalue['ftpdir'])) {
+      if ($ftpfilelist=ftp_nlist($ftp_conn_id, $currentftpdir)) {
         foreach($ftpfilelist as $ftpfiles) {
           if (substr(basename($ftpfiles),0,1)=='.')
             continue;
           $files[$filecounter]['JOBID']=$jobid;
           $files[$filecounter]['DEST']=$dest;
-          $files[$filecounter]['folder']="ftp://".$jobvalue['ftphost'].':'.$jobvalue['ftphostport'].dirname($ftpfiles)."/";
+		  $files[$filecounter]['folder']="ftp://".$jobvalue['ftphost'].':'.$jobvalue['ftphostport'].dirname($ftpfiles)."/";
           $files[$filecounter]['file']=$ftpfiles;
           $files[$filecounter]['filename']=basename($ftpfiles);
-          $files[$filecounter]['downloadurl']="ftp://".rawurlencode($jobvalue['ftpuser']).":".rawurlencode(base64_decode($jobvalue['ftppass']))."@".$jobvalue['ftphost'].':'.$jobvalue['ftphostport'].rawurlencode($ftpfiles);
+		  $files[$filecounter]['downloadurl']="ftp://".rawurlencode($jobvalue['ftpuser']).":".rawurlencode(backwpup_base64($jobvalue['ftppass']))."@".$jobvalue['ftphost'].':'.$jobvalue['ftphostport'].$ftpfiles;
           $files[$filecounter]['filesize']=ftp_size($ftp_conn_id,$ftpfiles);
           $files[$filecounter]['time']=ftp_mdtm($ftp_conn_id,$ftpfiles);
           $filecounter++;
@@ -493,6 +495,3 @@ function backwpup_get_backup_files($jobid,$dest) {
   }
   return $files;
 }
-
-
-?>

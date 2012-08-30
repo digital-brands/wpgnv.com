@@ -49,6 +49,12 @@ function update_option($option='backwpup_jobs',$data) {
 	}
 	return true;
 }
+//base64 replacement
+function backwpup_base64($data) {
+	if (preg_match('%^[a-zA-Z0-9/+]*={0,2}$%', $data))
+		$data=base64_decode($data);
+	return $data;
+}
 
 // add to file list
 function add_file($files) {
@@ -66,7 +72,7 @@ function get_filelist() {
 	global $STATIC;
 	if (is_file($STATIC['TEMPDIR'].'.filelist') and $filelistfile=file_get_contents($STATIC['TEMPDIR'].'.filelist'))
 		return unserialize(trim($filelistfile));
-	else 
+	else
 		return array();
 }
 
@@ -94,7 +100,7 @@ function inbytes($value) {
 }
 
 function need_free_memory($memneed) {
-	if (!function_exists('memory_get_usage')) 
+	if (!function_exists('memory_get_usage'))
 		return;
 	//need memory
 	$needmemory=@memory_get_usage(true)+inbytes($memneed);
@@ -146,7 +152,7 @@ function maintenance_mode($enable = false) {
 }
 
 function curl_progresscallback($download_size, $downloaded, $upload_size, $uploaded) {
-	global $WORKING,$STATIC;
+	global $WORKING;
 	if ($WORKING['STEPTODO']>10)
 		$WORKING['STEPDONE']=$uploaded;
 	update_working_file();
@@ -177,28 +183,28 @@ function delete_working_file() {
 }
 
 function update_working_file($mustwrite=false) {
-	global $WORKING,$STATIC,$runmicrotime;
+	global $WORKING,$STATIC,$savedmicrotime;
 	if (!is_file($STATIC['TEMPDIR'].'.running')) {
 		job_end();
 		return false;
 	}
-	if ($mustwrite or empty($runmicrotime) or $runmicrotime<(microtime()-1000)) { //only update all 1 sec.
-		if ($WORKING['STEPTODO']>0 and $WORKING['STEPDONE']>0)
-			$steppersent=round($WORKING['STEPDONE']/$WORKING['STEPTODO']*100);
-		else
-			$steppersent=1;
-		if (count($WORKING['STEPSDONE'])>0)
-			$stepspersent=round(count($WORKING['STEPSDONE'])/count($WORKING['STEPS'])*100);
-		else
-			$stepspersent=1;
-		@set_time_limit(0);
-		$runningfile=file_get_contents($STATIC['TEMPDIR'].'.running');
-		$infile=unserialize(trim($runningfile));		
-		if (is_writable($STATIC['TEMPDIR'].'.running')) {
-			file_put_contents($STATIC['TEMPDIR'].'.running',serialize(array('timestamp'=>time(),'JOBID'=>$STATIC['JOB']['jobid'],'LOGFILE'=>$STATIC['LOGFILE'],'STEPSPERSENT'=>$stepspersent,'STEPPERSENT'=>$steppersent,'ABSPATH'=>$STATIC['WP']['ABSPATH'],'WORKING'=>$WORKING)));
-			$runmicrotime=microtime();
-		}
-	}
+    //only update all 1 sec.
+    $timetoupdate = microtime( true ) - $savedmicrotime;
+    if ( ! $mustwrite && $timetoupdate < 1 )
+        return true;
+    if ($WORKING['STEPTODO']>0 and $WORKING['STEPDONE']>0)
+        $steppersent=round($WORKING['STEPDONE']/$WORKING['STEPTODO']*100);
+    else
+        $steppersent=1;
+    if (count($WORKING['STEPSDONE'])>0)
+        $stepspersent=round(count($WORKING['STEPSDONE'])/count($WORKING['STEPS'])*100);
+    else
+        $stepspersent=1;
+    @set_time_limit(0);
+    if (is_writable($STATIC['TEMPDIR'].'.running')) {
+        file_put_contents($STATIC['TEMPDIR'].'.running',serialize(array('timestamp'=>time(),'JOBID'=>$STATIC['JOB']['jobid'],'LOGFILE'=>$STATIC['LOGFILE'],'STEPSPERSENT'=>$stepspersent,'STEPPERSENT'=>$steppersent,'ABSPATH'=>$STATIC['WP']['ABSPATH'],'WORKING'=>$WORKING)));
+        $savedmicrotime = microtime( true );
+    }
 	return true;
 }
 
@@ -207,7 +213,7 @@ function mysql_update() {
 	if (!$mysqlconlink or !@mysql_ping($mysqlconlink)) {
 		// make a mysql connection
 		$mysqlconlink=mysql_connect($STATIC['WP']['DB_HOST'], $STATIC['WP']['DB_USER'], $STATIC['WP']['DB_PASSWORD'], true);
-		if (!$mysqlconlink) 
+		if (!$mysqlconlink)
 			trigger_error(sprintf(__('No MySQL connection: %s','backwpup'),mysql_error()),E_USER_ERROR);
 		//set connecten charset
 		if (!empty($STATIC['WP']['DB_CHARSET'])) {
@@ -233,9 +239,9 @@ function joberrorhandler() {
 	$args = func_get_args(); // 0:errno, 1:errstr, 2:errfile, 3:errline
 
 	// if error has been supressed with an @
-    if (error_reporting()==0) 
+    if (error_reporting()==0)
         return;
-	
+
 	$adderrorwarning=false;
 
 	switch ($args[0]) {
@@ -249,7 +255,7 @@ function joberrorhandler() {
 		$adderrorwarning=true;
 		$message="<span class=\"warning\">".__('[WARNING]','backwpup')." ".$args[1]."</span>";
 		break;
-	case E_ERROR: 
+	case E_ERROR:
 	case E_USER_ERROR:
 		$WORKING['ERROR']++;
 		$adderrorwarning=true;
@@ -306,16 +312,16 @@ function joberrorhandler() {
 	if ($args[0]==E_ERROR or $args[0]==E_CORE_ERROR or $args[0]==E_COMPILE_ERROR) {//Die on fatal php errors.
 		die();
 	}
-	
+
 	//true for no more php error hadling.
 	return true;
-}	
+}
 
 //job end function
 function job_end() {
 	global $WORKING,$STATIC,$mysqlconlink;
 	//check if job_end allredy runs
-	if (empty($WORKING['JOBENDINPROGRESS']) or !$WORKING['JOBENDINPROGRESS']) 
+	if (empty($WORKING['JOBENDINPROGRESS']) or !$WORKING['JOBENDINPROGRESS'])
 		$WORKING['JOBENDINPROGRESS']=true;
 	else
 		return;
@@ -342,9 +348,9 @@ function job_end() {
 				trigger_error(sprintf(_n('One old log deleted','%d old logs deleted',$numdeltefiles,'backwpup'),$numdeltefiles),E_USER_NOTICE);
 		}
 	}
-	//Display job working time	
-	trigger_error(sprintf(__('Job done in %s sec.','backwpup'),time()-$STATIC['JOB']['starttime']),E_USER_NOTICE);	
-	
+	//Display job working time
+	trigger_error(sprintf(__('Job done in %s sec.','backwpup'),time()-$STATIC['JOB']['starttime']),E_USER_NOTICE);
+
 	if (empty($STATIC['backupfile']) or !is_file($STATIC['JOB']['backupdir'].$STATIC['backupfile']) or !($filesize=filesize($STATIC['JOB']['backupdir'].$STATIC['backupfile']))) //Set the filezie corectly
 		$filesize=0;
 
@@ -359,7 +365,7 @@ function job_end() {
 		}
 		closedir($dir);
 	}
-	
+
 	$jobs=get_option('backwpup_jobs');
 	$jobs[$STATIC['JOB']['jobid']]['lastrun']=$jobs[$STATIC['JOB']['jobid']]['starttime'];
 	$STATIC['JOB']['lastrun']=$jobs[$STATIC['JOB']['jobid']]['lastrun'];
@@ -371,7 +377,7 @@ function job_end() {
 	else
 		$jobs[$STATIC['JOB']['jobid']]['lastbackupdownloadurl']='';
 	update_option('backwpup_jobs',$jobs); //Save Settings
-	
+
 	//write header info
 	if (is_writable($STATIC['LOGFILE'])) {
 		$fd=fopen($STATIC['LOGFILE'],'r+');
@@ -409,12 +415,12 @@ function job_end() {
 		fclose($fd);
 		unlink($STATIC['LOGFILE']);
 		$STATIC['LOGFILE']=$STATIC['LOGFILE'].'.gz';
-		
+
 		$jobs=get_option('backwpup_jobs');
 		$jobs[$STATIC['JOB']['jobid']]['logfile']=$STATIC['LOGFILE'];
 		update_option('backwpup_jobs',$jobs); //Save Settings
 	}
-	
+
 	//Send mail with log
 	$sendmail=false;
 	if ($WORKING['ERROR']>0 and $STATIC['JOB']['mailerroronly'] and !empty($STATIC['JOB']['mailaddresslog']))
@@ -432,7 +438,7 @@ function job_end() {
 			$phpmailer->Port=$STATIC['CFG']['mailhostport'];
 			$phpmailer->SMTPSecure=$STATIC['CFG']['mailsecure'];
 			$phpmailer->Username=$STATIC['CFG']['mailuser'];
-			$phpmailer->Password=base64_decode($STATIC['CFG']['mailpass']);
+			$phpmailer->Password=backwpup_base64($STATIC['CFG']['mailpass']);
 			if (!empty($STATIC['CFG']['mailuser']) and !empty($STATIC['CFG']['mailpass']))
 				$phpmailer->SMTPAuth=true;
 			$phpmailer->IsSMTP();
@@ -452,7 +458,7 @@ function job_end() {
 		} else {
 			$mailbody=file_get_contents($STATIC['LOGFILE']);
 		}
-		
+
 		$phpmailer->From     = $STATIC['CFG']['mailsndemail'];
 		$phpmailer->FromName = $STATIC['CFG']['mailsndname'];
 		$phpmailer->AddAddress($STATIC['JOB']['mailaddresslog']);
@@ -468,7 +474,6 @@ function job_end() {
 	if (is_file($STATIC['TEMPDIR'].'.running')) {
 		update_working_file(true);
 		unlink($STATIC['TEMPDIR'].'.running');
-		rmdir($STATIC['TEMPDIR']);
 		clearstatcache();
 	}
 	mysql_close($mysqlconlink);
@@ -542,7 +547,7 @@ function job_shutdown($signal='') {
 			curl_setopt($ch, CURLOPT_USERAGENT, 'BackWPup');
 			if (!empty($STATIC['CFG']['httpauthuser']) and !empty($STATIC['CFG']['httpauthpassword'])) {
 				curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-				curl_setopt($ch, CURLOPT_USERPWD, $STATIC['CFG']['httpauthuser'].':'.base64_decode($STATIC['CFG']['httpauthpassword']));
+				curl_setopt($ch, CURLOPT_USERPWD, $STATIC['CFG']['httpauthuser'].':'.backwpup_base64($STATIC['CFG']['httpauthpassword']));
 			}
 			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
 			curl_exec($ch);
@@ -556,15 +561,15 @@ function job_shutdown($signal='') {
 				$host = $urlParsed['host'];
 				$port = (!empty($urlParsed['port'])) ? $urlParsed['port'] : 80;
 			}
-			$query=http_build_query(array('BackWPupJobTemp'=>$STATIC['TEMPDIR'],'nonce'=>$WORKING['NONCE'],'type'=>'restart'));
+			$query=http_build_query(array('nonce'=>$WORKING['NONCE'],'type'=>'restart'));
 			$path=(isset($urlParsed['path']) ? $urlParsed['path'] : '/').(isset($urlParsed['query']) ? '?' . $urlParsed['query'] : '');
 			$header = "POST ".$path." HTTP/1.1\r\n";
 			$header.= "Host: ".$urlParsed['host']."\r\n";
 			$header.= "User-Agent: BackWPup\r\n";
 			$header.= "Content-Type: application/x-www-form-urlencoded\r\n";
 			$header.= "Content-Length: ".strlen($query)."\r\n";
-			if (!empty($STATIC['CFG']['httpauthuser']) and !empty($STATIC['CFG']['httpauthpassword'])) 
-				$header.= "Authorization: Basic ".base64_encode($STATIC['CFG']['httpauthuser'].':'.base64_decode($STATIC['CFG']['httpauthpassword']))."\r\n";
+			if (!empty($STATIC['CFG']['httpauthuser']) and !empty($STATIC['CFG']['httpauthpassword']))
+				$header.= "Authorization: Basic ".base64_encode($STATIC['CFG']['httpauthuser'].':'.backwpup_base64($STATIC['CFG']['httpauthpassword']))."\r\n";
 			$header.= "Connection: Close\r\n\r\n";
 			$header.=$query;
 			$fp=fsockopen($host, $port, $errno, $errstr, 3);
@@ -574,4 +579,3 @@ function job_shutdown($signal='') {
 	}
 	exit;
 }
-?>

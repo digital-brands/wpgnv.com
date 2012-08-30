@@ -29,7 +29,7 @@
  *  
  * Visit <a href="http://aws.amazon.com/ec2/">http://aws.amazon.com/ec2/</a> for more information.
  *
- * @version 2012.04.18
+ * @version 2012.08.01
  * @license See the included NOTICE.md file for complete information.
  * @copyright See the included NOTICE.md file for complete information.
  * @link http://aws.amazon.com/ec2/ Amazon EC2
@@ -138,7 +138,7 @@ class AmazonEC2 extends CFRuntime
 	 */
 	public function __construct(array $options = array())
 	{
-		$this->api_version = '2012-03-01';
+		$this->api_version = '2012-07-20';
 		$this->hostname = self::DEFAULT_URL;
 		$this->auth_class = 'AuthV2Query';
 
@@ -180,6 +180,10 @@ class AmazonEC2 extends CFRuntime
 	const INSTANCE_CLUSTER_4XLARGE = 'cc1.4xlarge';
 	const INSTANCE_CLUSTER_8XLARGE = 'cc2.8xlarge';
 	const INSTANCE_CLUSTER_GPU_XLARGE = 'cg1.4xlarge';
+
+	// High I/O
+	const INSTANCE_HIGH_IO_4XLARGE = 'hi1.4xlarge';
+
 
 	/*%******************************************************************************************%*/
 	// SETTERS
@@ -239,6 +243,35 @@ class AmazonEC2 extends CFRuntime
 	}
 
 	/**
+	 * 
+	 *
+	 * @param string $network_interface_id (Required) 
+	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>PrivateIpAddress</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
+	 * 	<li><code>SecondaryPrivateIpAddressCount</code> - <code>integer</code> - Optional - </li>
+	 * 	<li><code>AllowReassignment</code> - <code>boolean</code> - Optional - </li>
+	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
+	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
+	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
+	 */
+	public function assign_private_ip_addresses($network_interface_id, $opt = null)
+	{
+		if (!$opt) $opt = array();
+		$opt['NetworkInterfaceId'] = $network_interface_id;
+		
+		// Optional list (non-map)
+		if (isset($opt['PrivateIpAddress']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'PrivateIpAddress' => (is_array($opt['PrivateIpAddress']) ? $opt['PrivateIpAddress'] : array($opt['PrivateIpAddress']))
+			)));
+			unset($opt['PrivateIpAddress']);
+		}
+
+		return $this->authenticate('AssignPrivateIpAddresses', $opt);
+	}
+
+	/**
 	 * The AssociateAddress operation associates an elastic IP address with an instance.
 	 *  
 	 * If the IP address is currently assigned to another instance, the IP address is assigned to the
@@ -250,6 +283,8 @@ class AmazonEC2 extends CFRuntime
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>AllocationId</code> - <code>string</code> - Optional - The allocation ID that AWS returned when you allocated the elastic IP address for use with Amazon VPC.</li>
 	 * 	<li><code>NetworkInterfaceId</code> - <code>string</code> - Optional - </li>
+	 * 	<li><code>PrivateIpAddress</code> - <code>string</code> - Optional - </li>
+	 * 	<li><code>AllowReassociation</code> - <code>boolean</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -574,6 +609,23 @@ class AmazonEC2 extends CFRuntime
 	}
 
 	/**
+	 * 
+	 *
+	 * @param string $export_task_id (Required) 
+	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
+	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
+	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
+	 */
+	public function cancel_export_task($export_task_id, $opt = null)
+	{
+		if (!$opt) $opt = array();
+		$opt['ExportTaskId'] = $export_task_id;
+		
+		return $this->authenticate('CancelExportTask', $opt);
+	}
+
+	/**
 	 * Cancels one or more Spot Instance requests.
 	 *  
 	 * Spot Instances are instances that Amazon EC2 starts on your behalf when the maximum price that
@@ -704,6 +756,22 @@ class AmazonEC2 extends CFRuntime
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>Description</code> - <code>string</code> - Optional - The description for the new AMI being created.</li>
 	 * 	<li><code>NoReboot</code> - <code>boolean</code> - Optional - By default this property is set to <code>false</code>, which means Amazon EC2 attempts to cleanly shut down the instance before image creation and reboots the instance afterwards. When set to true, Amazon EC2 will not shut down the instance before creating the image. When this option is used, file system integrity on the created image cannot be guaranteed.</li>
+	 * 	<li><code>BlockDeviceMapping</code> - <code>array</code> - Optional - The BlockDeviceMappingItemType data type. <ul>
+	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 			<li><code>VirtualName</code> - <code>string</code> - Optional - Specifies the virtual device name.</li>
+	 * 			<li><code>DeviceName</code> - <code>string</code> - Optional - Specifies the device name (e.g., <code>/dev/sdh</code>).</li>
+	 * 			<li><code>Ebs</code> - <code>array</code> - Optional - Specifies parameters used to automatically setup Amazon EBS volumes when the instance is launched. <ul>
+	 * 				<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 					<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which the volume will be created.</li>
+	 * 					<li><code>VolumeSize</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes.</li>
+	 * 					<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - Specifies whether the Amazon EBS volume is deleted on instance termination.</li>
+	 * 					<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 					<li><code>Iops</code> - <code>integer</code> - Optional - </li>
+	 * 				</ul></li>
+	 * 			</ul></li>
+	 * 			<li><code>NoDevice</code> - <code>string</code> - Optional - Specifies the device name to suppress during instance launch.</li>
+	 * 		</ul></li>
+	 * 	</ul></li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -714,7 +782,52 @@ class AmazonEC2 extends CFRuntime
 		$opt['InstanceId'] = $instance_id;
 		$opt['Name'] = $name;
 		
+		// Optional list + map
+		if (isset($opt['BlockDeviceMapping']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'BlockDeviceMapping' => $opt['BlockDeviceMapping']
+			)));
+			unset($opt['BlockDeviceMapping']);
+		}
+
 		return $this->authenticate('CreateImage', $opt);
+	}
+
+	/**
+	 * 
+	 *
+	 * @param string $instance_id (Required) 
+	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>Description</code> - <code>string</code> - Optional - </li>
+	 * 	<li><code>TargetEnvironment</code> - <code>string</code> - Optional -  [Allowed values: <code>citrix</code>, <code>vmware</code>]</li>
+	 * 	<li><code>ExportToS3</code> - <code>array</code> - Optional -  <ul>
+	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 			<li><code>DiskImageFormat</code> - <code>string</code> - Optional -  [Allowed values: <code>vmdk</code>, <code>vhd</code>]</li>
+	 * 			<li><code>ContainerFormat</code> - <code>string</code> - Optional -  [Allowed values: <code>ova</code>]</li>
+	 * 			<li><code>S3Bucket</code> - <code>string</code> - Optional - </li>
+	 * 			<li><code>S3Prefix</code> - <code>string</code> - Optional - </li>
+	 * 		</ul></li>
+	 * 	</ul></li>
+	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
+	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
+	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
+	 */
+	public function create_instance_export_task($instance_id, $opt = null)
+	{
+		if (!$opt) $opt = array();
+		$opt['InstanceId'] = $instance_id;
+		
+		// Optional map (non-list)
+		if (isset($opt['ExportToS3']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'ExportToS3' => $opt['ExportToS3']
+			)));
+			unset($opt['ExportToS3']);
+		}
+
+		return $this->authenticate('CreateInstanceExportTask', $opt);
 	}
 
 	/**
@@ -850,6 +963,13 @@ class AmazonEC2 extends CFRuntime
 	 * 	<li><code>Description</code> - <code>string</code> - Optional - </li>
 	 * 	<li><code>PrivateIpAddress</code> - <code>string</code> - Optional - </li>
 	 * 	<li><code>SecurityGroupId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
+	 * 	<li><code>PrivateIpAddresses</code> - <code>array</code> - Optional -  <ul>
+	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 			<li><code>PrivateIpAddress</code> - <code>string</code> - Required - </li>
+	 * 			<li><code>Primary</code> - <code>boolean</code> - Optional - </li>
+	 * 		</ul></li>
+	 * 	</ul></li>
+	 * 	<li><code>SecondaryPrivateIpAddressCount</code> - <code>integer</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -866,6 +986,15 @@ class AmazonEC2 extends CFRuntime
 				'SecurityGroupId' => (is_array($opt['SecurityGroupId']) ? $opt['SecurityGroupId'] : array($opt['SecurityGroupId']))
 			)));
 			unset($opt['SecurityGroupId']);
+		}
+		
+		// Optional list + map
+		if (isset($opt['PrivateIpAddresses']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'PrivateIpAddresses' => $opt['PrivateIpAddresses']
+			)));
+			unset($opt['PrivateIpAddresses']);
 		}
 
 		return $this->authenticate('CreateNetworkInterface', $opt);
@@ -1101,6 +1230,8 @@ class AmazonEC2 extends CFRuntime
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>Size</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes. Required if you are not creating a volume from a snapshot.</li>
 	 * 	<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which to create the new volume.</li>
+	 * 	<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 	<li><code>Iops</code> - <code>integer</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -1897,6 +2028,31 @@ class AmazonEC2 extends CFRuntime
 	}
 
 	/**
+	 * 
+	 *
+	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>ExportTaskId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
+	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
+	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
+	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
+	 */
+	public function describe_export_tasks($opt = null)
+	{
+		if (!$opt) $opt = array();
+				
+		// Optional list (non-map)
+		if (isset($opt['ExportTaskId']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'ExportTaskId' => (is_array($opt['ExportTaskId']) ? $opt['ExportTaskId'] : array($opt['ExportTaskId']))
+			)));
+			unset($opt['ExportTaskId']);
+		}
+
+		return $this->authenticate('DescribeExportTasks', $opt);
+	}
+
+	/**
 	 * The DescribeImageAttribute operation returns information about an attribute of an AMI. Only one
 	 * attribute can be specified per call.
 	 *
@@ -2017,7 +2173,7 @@ class AmazonEC2 extends CFRuntime
 	 * call.
 	 *
 	 * @param string $instance_id (Required) The ID of the instance whose instance attribute is being described.
-	 * @param string $attribute (Required) The name of the attribute to describe. Available attribute names: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDeviceName</code>, <code>blockDeviceMapping</code>
+	 * @param string $attribute (Required) The name of the attribute to describe. Available attribute names: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDeviceName</code>, <code>blockDeviceMapping</code> [Allowed values: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDeviceName</code>, <code>blockDeviceMapping</code>, <code>productCodes</code>, <code>sourceDestCheck</code>, <code>groupSet</code>, <code>ebsOptimized</code>]
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
@@ -2092,6 +2248,7 @@ class AmazonEC2 extends CFRuntime
 	 * 	</ul></li>
 	 * 	<li><code>NextToken</code> - <code>string</code> - Optional - A string specifying the next paginated set of results to return.</li>
 	 * 	<li><code>MaxResults</code> - <code>integer</code> - Optional - The maximum number of paginated instance items per response.</li>
+	 * 	<li><code>IncludeAllInstances</code> - <code>boolean</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -2551,7 +2708,7 @@ class AmazonEC2 extends CFRuntime
 	 *
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>ReservedInstancesOfferingId</code> - <code>string|array</code> - Optional - An optional list of the unique IDs of the Reserved Instance offerings to describe. Pass a string for a single value, or an indexed array for multiple values.</li>
-	 * 	<li><code>InstanceType</code> - <code>string</code> - Optional - The instance type on which the Reserved Instance can be used. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
+	 * 	<li><code>InstanceType</code> - <code>string</code> - Optional - The instance type on which the Reserved Instance can be used. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>hi1.4xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
 	 * 	<li><code>AvailabilityZone</code> - <code>string</code> - Optional - The Availability Zone in which the Reserved Instance can be used.</li>
 	 * 	<li><code>ProductDescription</code> - <code>string</code> - Optional - The Reserved Instance product description.</li>
 	 * 	<li><code>Filter</code> - <code>array</code> - Optional - A list of filters used to match properties for ReservedInstancesOfferings. For a complete reference to the available filter keys for this operation, see the <a href="http://docs.amazonwebservices.com/AWSEC2/latest/APIReference/">Amazon EC2 API reference</a>. <ul>
@@ -2704,7 +2861,7 @@ class AmazonEC2 extends CFRuntime
 	 * call.
 	 *
 	 * @param string $snapshot_id (Required) The ID of the EBS snapshot whose attribute is being described.
-	 * @param string $attribute (Required) The name of the EBS attribute to describe. Available attribute names: createVolumePermission
+	 * @param string $attribute (Required) The name of the EBS attribute to describe. Available attribute names: createVolumePermission [Allowed values: <code>productCodes</code>, <code>createVolumePermission</code>]
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
@@ -3028,7 +3185,7 @@ class AmazonEC2 extends CFRuntime
 	 *
 	 * @param string $volume_id (Required) 
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
-	 * 	<li><code>Attribute</code> - <code>string</code> - Optional - </li>
+	 * 	<li><code>Attribute</code> - <code>string</code> - Optional -  [Allowed values: <code>autoEnableIO</code>, <code>productCodes</code>]</li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -3512,12 +3669,12 @@ class AmazonEC2 extends CFRuntime
 	 * 			<li><code>SecurityGroup</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 			<li><code>AdditionalInfo</code> - <code>string</code> - Optional - </li>
 	 * 			<li><code>UserData</code> - <code>string</code> - Optional - </li>
-	 * 			<li><code>InstanceType</code> - <code>string</code> - Optional -  [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
+	 * 			<li><code>InstanceType</code> - <code>string</code> - Optional -  [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>hi1.4xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
 	 * 			<li><code>Placement</code> - <code>array</code> - Optional - Describes where an Amazon EC2 instance is running within an Amazon EC2 region. <ul>
 	 * 				<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
 	 * 					<li><code>AvailabilityZone</code> - <code>string</code> - Optional - The availability zone in which an Amazon EC2 instance runs.</li>
 	 * 					<li><code>GroupName</code> - <code>string</code> - Optional - The name of the <code>PlacementGroup</code> in which an Amazon EC2 instance runs. Placement groups are primarily used for launching High Performance Computing instances in the same group to ensure fast connection speeds.</li>
-	 * 					<li><code>Tenancy</code> - <code>string</code> - Optional - The allowed tenancy of instances launched into the VPC. A value of default means instances can be launched with any tenancy; a value of dedicated means instances must be launched with tenancy as dedicated.</li>
+	 * 					<li><code>Tenancy</code> - <code>string</code> - Optional - The allowed tenancy of instances launched into the VPC. A value of default means instances can be launched with any tenancy; a value of dedicated means all instances launched into the VPC will be launched as dedicated tenancy regardless of the tenancy assigned to the instance at launch.</li>
 	 * 				</ul></li>
 	 * 			</ul></li>
 	 * 			<li><code>BlockDeviceMapping</code> - <code>array</code> - Optional - The BlockDeviceMappingItemType data type. <ul>
@@ -3529,6 +3686,8 @@ class AmazonEC2 extends CFRuntime
 	 * 							<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which the volume will be created.</li>
 	 * 							<li><code>VolumeSize</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes.</li>
 	 * 							<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - Specifies whether the Amazon EBS volume is deleted on instance termination.</li>
+	 * 							<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 							<li><code>Iops</code> - <code>integer</code> - Optional - </li>
 	 * 						</ul></li>
 	 * 					</ul></li>
 	 * 					<li><code>NoDevice</code> - <code>string</code> - Optional - Specifies the device name to suppress during instance launch.</li>
@@ -3748,7 +3907,7 @@ class AmazonEC2 extends CFRuntime
 	 *
 	 * @param string $instance_id (Required) The ID of the instance whose attribute is being modified.
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
-	 * 	<li><code>Attribute</code> - <code>string</code> - Optional - The name of the attribute being modified. Available attribute names: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDevice</code>, <code>blockDeviceMapping</code></li>
+	 * 	<li><code>Attribute</code> - <code>string</code> - Optional - The name of the attribute being modified. Available attribute names: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDevice</code>, <code>blockDeviceMapping</code> [Allowed values: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDeviceName</code>, <code>blockDeviceMapping</code>, <code>productCodes</code>, <code>sourceDestCheck</code>, <code>groupSet</code>, <code>ebsOptimized</code>]</li>
 	 * 	<li><code>Value</code> - <code>string</code> - Optional - The new value of the instance attribute being modified. Only valid when <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code> or <code>instanceInitiateShutdownBehavior</code> is specified as the attribute being modified.</li>
 	 * 	<li><code>BlockDeviceMapping</code> - <code>array</code> - Optional - The new block device mappings for the instance whose attributes are being modified. Only valid when blockDeviceMapping is specified as the attribute being modified. <ul>
 	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
@@ -3771,6 +3930,7 @@ class AmazonEC2 extends CFRuntime
 	 * 	<li><code>UserData.Value</code> - <code>string</code> - Optional - String value</li>
 	 * 	<li><code>InstanceInitiatedShutdownBehavior.Value</code> - <code>string</code> - Optional - String value</li>
 	 * 	<li><code>GroupId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
+	 * 	<li><code>EbsOptimized.Value</code> - <code>boolean</code> - Optional - Boolean value</li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -3850,7 +4010,7 @@ class AmazonEC2 extends CFRuntime
 	 *
 	 * @param string $snapshot_id (Required) The ID of the EBS snapshot whose attributes are being modified.
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
-	 * 	<li><code>Attribute</code> - <code>string</code> - Optional - The name of the attribute being modified. Available attribute names: <code>createVolumePermission</code></li>
+	 * 	<li><code>Attribute</code> - <code>string</code> - Optional - The name of the attribute being modified. Available attribute names: <code>createVolumePermission</code> [Allowed values: <code>productCodes</code>, <code>createVolumePermission</code>]</li>
 	 * 	<li><code>OperationType</code> - <code>string</code> - Optional - The operation to perform on the attribute. Available operation names: <code>add</code>, <code>remove</code></li>
 	 * 	<li><code>UserId</code> - <code>string|array</code> - Optional - The AWS user IDs to add to or remove from the list of users that have permission to create EBS volumes from the specified snapshot. Currently supports "all". <p class="note">Only valid when the <code>createVolumePermission</code> attribute is being modified.</p> Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 	<li><code>UserGroup</code> - <code>string|array</code> - Optional - The AWS group names to add to or remove from the list of groups that have permission to create EBS volumes from the specified snapshot. Currently supports "all". <p class="note">Only valid when the <code>createVolumePermission</code> attribute is being modified.</p> Pass a string for a single value, or an indexed array for multiple values.</li>
@@ -4023,6 +4183,8 @@ class AmazonEC2 extends CFRuntime
 	 * 					<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which the volume will be created.</li>
 	 * 					<li><code>VolumeSize</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes.</li>
 	 * 					<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - Specifies whether the Amazon EBS volume is deleted on instance termination.</li>
+	 * 					<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 					<li><code>Iops</code> - <code>integer</code> - Optional - </li>
 	 * 				</ul></li>
 	 * 			</ul></li>
 	 * 			<li><code>NoDevice</code> - <code>string</code> - Optional - Specifies the device name to suppress during instance launch.</li>
@@ -4293,7 +4455,7 @@ class AmazonEC2 extends CFRuntime
 	 * 			<li><code>SecurityGroup</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 			<li><code>UserData</code> - <code>string</code> - Optional - Optional data, specific to a user's application, to provide in the launch request. All instances that collectively comprise the launch request have access to this data. User data is never returned through API responses.</li>
 	 * 			<li><code>AddressingType</code> - <code>string</code> - Optional - </li>
-	 * 			<li><code>InstanceType</code> - <code>string</code> - Optional - Specifies the instance type. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
+	 * 			<li><code>InstanceType</code> - <code>string</code> - Optional - Specifies the instance type. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>hi1.4xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
 	 * 			<li><code>Placement</code> - <code>array</code> - Optional - Defines a placement item. <ul>
 	 * 				<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
 	 * 					<li><code>AvailabilityZone</code> - <code>string</code> - Optional - The availability zone in which an Amazon EC2 instance runs.</li>
@@ -4311,6 +4473,8 @@ class AmazonEC2 extends CFRuntime
 	 * 							<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which the volume will be created.</li>
 	 * 							<li><code>VolumeSize</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes.</li>
 	 * 							<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - Specifies whether the Amazon EBS volume is deleted on instance termination.</li>
+	 * 							<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 							<li><code>Iops</code> - <code>integer</code> - Optional - </li>
 	 * 						</ul></li>
 	 * 					</ul></li>
 	 * 					<li><code>NoDevice</code> - <code>string</code> - Optional - Specifies the device name to suppress during instance launch.</li>
@@ -4327,8 +4491,22 @@ class AmazonEC2 extends CFRuntime
 	 * 					<li><code>PrivateIpAddress</code> - <code>string</code> - Optional - </li>
 	 * 					<li><code>SecurityGroupId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 					<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - </li>
+	 * 					<li><code>PrivateIpAddresses</code> - <code>array</code> - Optional -  <ul>
+	 * 						<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 							<li><code>PrivateIpAddress</code> - <code>string</code> - Required - </li>
+	 * 							<li><code>Primary</code> - <code>boolean</code> - Optional - </li>
+	 * 						</ul></li>
+	 * 					</ul></li>
+	 * 					<li><code>SecondaryPrivateIpAddressCount</code> - <code>integer</code> - Optional - </li>
 	 * 				</ul></li>
 	 * 			</ul></li>
+	 * 			<li><code>IamInstanceProfile</code> - <code>array</code> - Optional -  <ul>
+	 * 				<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 					<li><code>Arn</code> - <code>string</code> - Optional - </li>
+	 * 					<li><code>Name</code> - <code>string</code> - Optional - </li>
+	 * 				</ul></li>
+	 * 			</ul></li>
+	 * 			<li><code>EbsOptimized</code> - <code>boolean</code> - Optional - </li>
 	 * 		</ul></li>
 	 * 	</ul></li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
@@ -4391,7 +4569,7 @@ class AmazonEC2 extends CFRuntime
 	 * Resets an attribute of an instance to its default value.
 	 *
 	 * @param string $instance_id (Required) The ID of the Amazon EC2 instance whose attribute is being reset.
-	 * @param string $attribute (Required) The name of the attribute being reset. Available attribute names: <code>kernel</code>, <code>ramdisk</code>
+	 * @param string $attribute (Required) The name of the attribute being reset. Available attribute names: <code>kernel</code>, <code>ramdisk</code> [Allowed values: <code>instanceType</code>, <code>kernel</code>, <code>ramdisk</code>, <code>userData</code>, <code>disableApiTermination</code>, <code>instanceInitiatedShutdownBehavior</code>, <code>rootDeviceName</code>, <code>blockDeviceMapping</code>, <code>productCodes</code>, <code>sourceDestCheck</code>, <code>groupSet</code>, <code>ebsOptimized</code>]
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
@@ -4428,7 +4606,7 @@ class AmazonEC2 extends CFRuntime
 	 * Resets permission settings for the specified snapshot.
 	 *
 	 * @param string $snapshot_id (Required) The ID of the snapshot whose attribute is being reset.
-	 * @param string $attribute (Required) The name of the attribute being reset. Available attribute names: <code>createVolumePermission</code>
+	 * @param string $attribute (Required) The name of the attribute being reset. Available attribute names: <code>createVolumePermission</code> [Allowed values: <code>productCodes</code>, <code>createVolumePermission</code>]
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
@@ -4599,12 +4777,12 @@ class AmazonEC2 extends CFRuntime
 	 * 	<li><code>SecurityGroupId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 	<li><code>UserData</code> - <code>string</code> - Optional - Specifies additional information to make available to the instance(s).</li>
 	 * 	<li><code>AddressingType</code> - <code>string</code> - Optional - </li>
-	 * 	<li><code>InstanceType</code> - <code>string</code> - Optional - Specifies the instance type for the launched instances. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
+	 * 	<li><code>InstanceType</code> - <code>string</code> - Optional - Specifies the instance type for the launched instances. [Allowed values: <code>t1.micro</code>, <code>m1.small</code>, <code>m1.medium</code>, <code>m1.large</code>, <code>m1.xlarge</code>, <code>m2.xlarge</code>, <code>m2.2xlarge</code>, <code>m2.4xlarge</code>, <code>c1.medium</code>, <code>c1.xlarge</code>, <code>hi1.4xlarge</code>, <code>cc1.4xlarge</code>, <code>cc2.8xlarge</code>, <code>cg1.4xlarge</code>]</li>
 	 * 	<li><code>Placement</code> - <code>array</code> - Optional - Specifies the placement constraints (Availability Zones) for launching the instances. <ul>
 	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
 	 * 			<li><code>AvailabilityZone</code> - <code>string</code> - Optional - The availability zone in which an Amazon EC2 instance runs.</li>
 	 * 			<li><code>GroupName</code> - <code>string</code> - Optional - The name of the <code>PlacementGroup</code> in which an Amazon EC2 instance runs. Placement groups are primarily used for launching High Performance Computing instances in the same group to ensure fast connection speeds.</li>
-	 * 			<li><code>Tenancy</code> - <code>string</code> - Optional - The allowed tenancy of instances launched into the VPC. A value of default means instances can be launched with any tenancy; a value of dedicated means instances must be launched with tenancy as dedicated.</li>
+	 * 			<li><code>Tenancy</code> - <code>string</code> - Optional - The allowed tenancy of instances launched into the VPC. A value of default means instances can be launched with any tenancy; a value of dedicated means all instances launched into the VPC will be launched as dedicated tenancy regardless of the tenancy assigned to the instance at launch.</li>
 	 * 		</ul></li>
 	 * 	</ul></li>
 	 * 	<li><code>KernelId</code> - <code>string</code> - Optional - The ID of the kernel with which to launch the instance.</li>
@@ -4618,6 +4796,8 @@ class AmazonEC2 extends CFRuntime
 	 * 					<li><code>SnapshotId</code> - <code>string</code> - Optional - The ID of the snapshot from which the volume will be created.</li>
 	 * 					<li><code>VolumeSize</code> - <code>integer</code> - Optional - The size of the volume, in gigabytes.</li>
 	 * 					<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - Specifies whether the Amazon EBS volume is deleted on instance termination.</li>
+	 * 					<li><code>VolumeType</code> - <code>string</code> - Optional -  [Allowed values: <code>standard</code>, <code>io1</code>]</li>
+	 * 					<li><code>Iops</code> - <code>integer</code> - Optional - </li>
 	 * 				</ul></li>
 	 * 			</ul></li>
 	 * 			<li><code>NoDevice</code> - <code>string</code> - Optional - Specifies the device name to suppress during instance launch.</li>
@@ -4643,8 +4823,22 @@ class AmazonEC2 extends CFRuntime
 	 * 			<li><code>PrivateIpAddress</code> - <code>string</code> - Optional - </li>
 	 * 			<li><code>SecurityGroupId</code> - <code>string|array</code> - Optional -  Pass a string for a single value, or an indexed array for multiple values.</li>
 	 * 			<li><code>DeleteOnTermination</code> - <code>boolean</code> - Optional - </li>
+	 * 			<li><code>PrivateIpAddresses</code> - <code>array</code> - Optional -  <ul>
+	 * 				<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 					<li><code>PrivateIpAddress</code> - <code>string</code> - Required - </li>
+	 * 					<li><code>Primary</code> - <code>boolean</code> - Optional - </li>
+	 * 				</ul></li>
+	 * 			</ul></li>
+	 * 			<li><code>SecondaryPrivateIpAddressCount</code> - <code>integer</code> - Optional - </li>
 	 * 		</ul></li>
 	 * 	</ul></li>
+	 * 	<li><code>IamInstanceProfile</code> - <code>array</code> - Optional -  <ul>
+	 * 		<li><code>x</code> - <code>array</code> - Optional - This represents a simple array index. <ul>
+	 * 			<li><code>Arn</code> - <code>string</code> - Optional - </li>
+	 * 			<li><code>Name</code> - <code>string</code> - Optional - </li>
+	 * 		</ul></li>
+	 * 	</ul></li>
+	 * 	<li><code>EbsOptimized</code> - <code>boolean</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -4709,6 +4903,15 @@ class AmazonEC2 extends CFRuntime
 			)));
 			unset($opt['NetworkInterface']);
 		}
+		
+		// Optional map (non-list)
+		if (isset($opt['IamInstanceProfile']))
+		{
+			$opt = array_merge($opt, CFComplexType::map(array(
+				'IamInstanceProfile' => $opt['IamInstanceProfile']
+			)));
+			unset($opt['IamInstanceProfile']);
+		}
 
 		return $this->authenticate('RunInstances', $opt);
 	}
@@ -4726,6 +4929,7 @@ class AmazonEC2 extends CFRuntime
 	 *
 	 * @param string|array $instance_id (Required) The list of Amazon EC2 instances to start. Pass a string for a single value, or an indexed array for multiple values.
 	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>AdditionalInfo</code> - <code>string</code> - Optional - </li>
 	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
 	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
 	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
@@ -4797,6 +5001,29 @@ class AmazonEC2 extends CFRuntime
 		)));
 
 		return $this->authenticate('TerminateInstances', $opt);
+	}
+
+	/**
+	 * 
+	 *
+	 * @param string $network_interface_id (Required) 
+	 * @param string|array $private_ip_address (Required)  Pass a string for a single value, or an indexed array for multiple values.
+	 * @param array $opt (Optional) An associative array of parameters that can have the following keys: <ul>
+	 * 	<li><code>curlopts</code> - <code>array</code> - Optional - A set of values to pass directly into <code>curl_setopt()</code>, where the key is a pre-defined <code>CURLOPT_*</code> constant.</li>
+	 * 	<li><code>returnCurlHandle</code> - <code>boolean</code> - Optional - A private toggle specifying that the cURL handle be returned rather than actually completing the request. This toggle is useful for manually managed batch requests.</li></ul>
+	 * @return CFResponse A <CFResponse> object containing a parsed HTTP response.
+	 */
+	public function unassign_private_ip_addresses($network_interface_id, $private_ip_address, $opt = null)
+	{
+		if (!$opt) $opt = array();
+		$opt['NetworkInterfaceId'] = $network_interface_id;
+		
+		// Required list (non-map)
+		$opt = array_merge($opt, CFComplexType::map(array(
+			'PrivateIpAddress' => (is_array($private_ip_address) ? $private_ip_address : array($private_ip_address))
+		)));
+
+		return $this->authenticate('UnassignPrivateIpAddresses', $opt);
 	}
 
 	/**

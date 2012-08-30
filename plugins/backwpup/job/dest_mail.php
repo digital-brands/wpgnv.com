@@ -15,7 +15,7 @@ function dest_mail() {
 		$phpmailer->Port=$STATIC['CFG']['mailhostport'];
 		$phpmailer->SMTPSecure=$STATIC['CFG']['mailsecure'];
 		$phpmailer->Username=$STATIC['CFG']['mailuser'];
-		$phpmailer->Password=base64_decode($STATIC['CFG']['mailpass']);
+		$phpmailer->Password=backwpup_base64($STATIC['CFG']['mailpass']);
 		if (!empty($STATIC['CFG']['mailuser']) and !empty($STATIC['CFG']['mailpass']))
 			$phpmailer->SMTPAuth=true;
 		$phpmailer->IsSMTP();
@@ -48,7 +48,7 @@ function dest_mail() {
 	}
 
 	trigger_error(__('Adding backup archive to mail','backwpup'),E_USER_NOTICE);
-	need_free_memory(filesize($STATIC['JOB']['backupdir'].$STATIC['backupfile'])*5);
+	need_free_memory(filesize($STATIC['JOB']['backupdir'].$STATIC['backupfile'])*6);
 	$phpmailer->AddAttachment($STATIC['JOB']['backupdir'].$STATIC['backupfile']);
 
 	trigger_error(__('Send mail....','backwpup'),E_USER_NOTICE);
@@ -60,4 +60,3 @@ function dest_mail() {
 	}
 	$WORKING['STEPSDONE'][]='DEST_MAIL'; //set done
 }
-?>

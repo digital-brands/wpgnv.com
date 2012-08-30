@@ -6,8 +6,8 @@ function dest_s3() {
   $WORKING['STEPDONE']=0;
 
   require_once(dirname(__FILE__).'/../libs/aws/sdk.class.php');
-  need_free_memory(26214400*1.1); 
-  
+  need_free_memory(26214400*1.1);
+
   try {
     $s3 = new AmazonS3(array('key'=>$STATIC['JOB']['awsAccessKey'],'secret'=>$STATIC['JOB']['awsSecretKey'],'certificate_authority'=>true));
     if ($s3->if_bucket_exists($STATIC['JOB']['awsBucket'])) {
@@ -15,17 +15,17 @@ function dest_s3() {
       //Transfer Backup to S3
       if ($STATIC['JOB']['awsrrs']) //set reduced redundancy or not
         $storage=AmazonS3::STORAGE_REDUCED;
-      else 
+      else
         $storage=AmazonS3::STORAGE_STANDARD;
-      //set surl Prozess bar
+      //set curl Progress bar
       $curlops=array();
       if (defined('CURLOPT_PROGRESSFUNCTION'))
-        $curlops=array(CURLOPT_NOPROGRESS=>false,CURLOPT_PROGRESSFUNCTION=>'curl_progresscallback',CURLOPT_BUFFERSIZE=>256);
-      trigger_error(__('Upload to Amazon S3 now started... ','backwpup'),E_USER_NOTICE);  
-      //transfere file to S3
-      $result=$s3->create_mpu_object($STATIC['JOB']['awsBucket'], $STATIC['JOB']['awsdir'].$STATIC['backupfile'], array('fileUpload' => $STATIC['JOB']['backupdir'].$STATIC['backupfile'],'acl' => AmazonS3::ACL_PRIVATE,'storage' => $storage,'partSize'=>26214400,'curlopts'=>$curlops));
+          $curlops=array(CURLOPT_NOPROGRESS=>false,CURLOPT_PROGRESSFUNCTION=>'curl_progresscallback',CURLOPT_BUFFERSIZE=>1048576);
+      trigger_error(__('Upload to Amazon S3 now started... ','backwpup'),E_USER_NOTICE);
+      //transferee file to S3
+      $result=$s3->create_object($STATIC['JOB']['awsBucket'], $STATIC['JOB']['awsdir'].$STATIC['backupfile'], array('fileUpload' => $STATIC['JOB']['backupdir'].$STATIC['backupfile'],'acl' => AmazonS3::ACL_PRIVATE,'storage' => $storage,'curlopts'=>$curlops));
       $result=(array)$result;
-      if ($result["status"]=200 and $result["status"]<300)  {
+      if ($result["status"]>=200 and $result["status"]<300)  {
         $WORKING['STEPTODO']=1+filesize($STATIC['JOB']['backupdir'].$STATIC['backupfile']);
         trigger_error(sprintf(__('Backup transferred to %s','backwpup'),$result["header"]["_info"]["url"]),E_USER_NOTICE);
         $STATIC['JOB']['lastbackupdownloadurl']=$STATIC['WP']['ADMINURL'].'?page=backwpupbackups&action=downloads3&file='.$STATIC['JOB']['awsdir'].$STATIC['backupfile'].'&jobid='.$STATIC['JOB']['jobid'];
@@ -40,7 +40,7 @@ function dest_s3() {
     trigger_error(sprintf(__('Amazon API: %s','backwpup'),$e->getMessage()),E_USER_ERROR);
     return;
   }
-  try {  
+  try {
     if ($s3->if_bucket_exists($STATIC['JOB']['awsBucket'])) {
       if ($STATIC['JOB']['awsmaxbackups']>0) { //Delete old backups
         $backupfilelist=array();
@@ -63,13 +63,12 @@ function dest_s3() {
           if ($numdeltefiles>0)
             trigger_error(sprintf(_n('One file deleted on S3 Bucket','%d files deleted on S3 Bucket',$numdeltefiles,'backwpup'),$numdeltefiles),E_USER_NOTICE);
         }
-      }          
+      }
     }
   } catch (Exception $e) {
     trigger_error(sprintf(__('Amazon API: %s','backwpup'),$e->getMessage()),E_USER_ERROR);
     return;
   }
-  
+
   $WORKING['STEPDONE']++;
 }
-?>

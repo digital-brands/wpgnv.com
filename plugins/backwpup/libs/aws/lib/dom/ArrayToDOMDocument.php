@@ -7,7 +7,7 @@
 class Array2DOM
 {
 	const ATTRIBUTES = '__attributes__';
-	const CONTENT = '__content__';
+	const CONTENT    = '__content__';
 
 	/**
 	 * @param array $source
@@ -67,6 +67,14 @@ class Array2DOM
 		if (!is_array($source))
 		{
 			$element = $document->createElement($tagName);
+
+			// Handle NULL bytes
+			if (strpos($source, "\0") !== false)
+			{
+				$source = 'json_encoded::' . json_encode($source);
+				$element->setAttribute('encoded', 'json');
+			}
+
 			$element->appendChild($document->createCDATASection($source));
 
 			return $element;

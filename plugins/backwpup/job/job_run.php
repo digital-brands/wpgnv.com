@@ -1,13 +1,18 @@
 <?PHP
 //Set a constance for not direkt loding in other files
-define('BACKWPUP_JOBRUN_FOLDER', dirname(__FILE__).'/');
+define('BACKWPUP_JOBRUN_FOLDER', str_replace('\\','/',dirname(__FILE__).'/'));
+//set temp dir
+$STATIC['TEMPDIR']=BACKWPUP_JOBRUN_FOLDER.'../tmp/';
+$STATIC['TEMPDIR']=realpath($STATIC['TEMPDIR']).'/';
+//check temp dir
+if (empty($STATIC['TEMPDIR']) || !is_dir($STATIC['TEMPDIR']) || !is_writable($STATIC['TEMPDIR']))
+	die($STATIC['TEMPDIR'].'Temp dir not writable!!! Job aborted!');
+//write PHP log	
+@ini_set( 'error_log', $STATIC['TEMPDIR'].'php_error.log' );
+@ini_set( 'display_errors', 'Off' );
+@ini_set( 'log_errors', 'On' );
 // get needed functions for the jobrun
 require_once(BACKWPUP_JOBRUN_FOLDER.'job_functions.php');
-//get temp dir
-$STATIC['TEMPDIR']=filter_input( INPUT_POST, 'BackWPupJobTemp', FILTER_SANITIZE_URL );	
-$STATIC['TEMPDIR']=rtrim(realpath($STATIC['TEMPDIR']),'/\\').'/';
-if (empty($STATIC['TEMPDIR']) || !is_dir($STATIC['TEMPDIR']) || !is_writable($STATIC['TEMPDIR']))
-	die('Temp dir not writable!!! Job aborted!');
 //read runningfile and config
 $runningfile=get_working_file();
 if ($runningfile['JOBID']>0 and $runningfile['WORKING']['NONCE']==$_POST['nonce']) {
@@ -23,11 +28,6 @@ if ($runningfile['JOBID']>0 and $runningfile['WORKING']['NONCE']==$_POST['nonce'
 } else {
 	die('Hack ?');
 }
-//check are temp dirs the same
-if ($STATIC['TEMPDIR']!=trim($_POST['BackWPupJobTemp'])) {
-	delete_working_file();
-	die('Temp dir not correct!');
-}
 ob_end_clean();
 header("Connection: close");
 ob_start();
@@ -35,8 +35,11 @@ header("Content-Length: 0");
 ob_end_flush();
 flush();
 // set memory limit to the same as WP.
-if (function_exists('memory_get_usage') && (inbytes(@ini_get('memory_limit')) < inbytes($STATIC['WP']['MEMORY_LIMIT'])))
-	@ini_set('memory_limit',$STATIC['WP']['MEMORY_LIMIT']);
+if ( function_exists( 'memory_get_usage' ) ) {
+	$current_limit = @ini_get( 'memory_limit' );
+	if ( -1 != $current_limit && ( -1 == $STATIC['WP']['MEMORY_LIMIT'] || ( intval( $current_limit ) < abs( intval( $STATIC['WP']['MEMORY_LIMIT'] ) ) ) ) )
+		@ini_set( 'memory_limit', $STATIC['WP']['MEMORY_LIMIT'] );
+}
 //check existing Logfile
 if (empty($STATIC) or !is_file($STATIC['LOGFILE'])) {
 	delete_working_file();
@@ -56,8 +59,10 @@ declare(ticks=1);
 //set timezone
 date_default_timezone_set('UTC');
 // set charakter encoding
-if (!@mb_internal_encoding($STATIC['WP']['CHARSET']))
-	mb_internal_encoding('UTF-8');
+if ( function_exists( 'mb_internal_encoding' ) ) {
+	if (!@mb_internal_encoding($STATIC['WP']['CHARSET']))
+		mb_internal_encoding('UTF-8');
+}
 //set function for PHP user defineid error handling
 set_error_handler('joberrorhandler',E_ALL | E_STRICT);
 //Get type and check job runs
@@ -105,7 +110,7 @@ foreach($WORKING['STEPS'] as $step) {
 foreach($WORKING['STEPS'] as $step) {
 	//display some info massages bevor fist step
 	if (count($WORKING['STEPSDONE'])==0) {
-		trigger_error(sprintf(__('[INFO]: BackWPup version %1$s, WordPress version %4$s Copyright &copy; %2$s %3$s'),$STATIC['BACKWPUP']['VERSION'],date('Y',time()+$STATIC['WP']['TIMEDIFF']),'<a href="http://danielhuesken.de" target="_blank">Daniel H&uuml;sken</a>',$STATIC['WP']['VERSION']),E_USER_NOTICE);
+		trigger_error(sprintf(__('[INFO]: BackWPup version %1$s, WordPress version %4$s Copyright &copy; %2$s %3$s','backwpup'),$STATIC['BACKWPUP']['VERSION'],date('Y',time()+$STATIC['WP']['TIMEDIFF']),'<a href="http://danielhuesken.de" target="_blank">Daniel H&uuml;sken</a>',$STATIC['WP']['VERSION']),E_USER_NOTICE);
 		trigger_error(__('[INFO]: BackWPup comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to redistribute it under certain conditions.','backwpup'),E_USER_NOTICE);
 		trigger_error(__('[INFO]: BackWPup job:','backwpup').' '.$STATIC['JOB']['jobid'].'. '.$STATIC['JOB']['name'].'; '.$STATIC['JOB']['type'],E_USER_NOTICE);
 		if ($STATIC['JOB']['activated'])
@@ -166,4 +171,3 @@ foreach($WORKING['STEPS'] as $step) {
 }
 //close mysql
 mysql_close($mysqlconlink);
-?>
