@@ -13,7 +13,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 		 * Class constructor
 		 */
 		function __construct() {
-			add_action( 'admin_footer', array( $this, 'tracking' ), 99 );
+			add_action( 'admin_head', array( $this, 'tracking' ), 10 );
 
 			// Invalidate the cache when changes are being made.
 			add_action( 'switch_theme', array( $this, 'delete_cache' ) );
@@ -44,6 +44,10 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 		 * Main tracking function.
 		 */
 		function tracking() {
+			global $pagenow;
+			if ( in_array( $pagenow, array('index.php','plugins.php','update-core.php','themes.php') ) === false )
+				return;
+
 			// Start of Metrics
 			global $wpdb;
 
@@ -55,7 +59,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 			}
 
 			$data = get_transient( 'yoast_tracking_cache' );
-			if ( ( defined( 'DEBUG_YOAST_TRACKING' ) && DEBUG_YOAST_TRACKING ) || !$data || $data == '' ) {
+			if ( !$data ) {
 
 				$pts = array();
 				foreach ( get_post_types( array( 'public' => true ) ) as $pt ) {
@@ -70,6 +74,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 					$theme_data = wp_get_theme();
 					$theme      = array(
 						'name'      => $theme_data->display( 'Name', false, false ),
+						'theme_uri' => $theme_data->display( 'ThemeURI', false, false ),
 						'version'   => $theme_data->display( 'Version', false, false ),
 						'author'    => $theme_data->display( 'Author', false, false ),
 						'author_uri'=> $theme_data->display( 'AuthorURI', false, false ),
@@ -78,6 +83,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 						$theme['template'] = array(
 							'version'   => $theme_data->parent()->display( 'Version', false, false ),
 							'name'      => $theme_data->parent()->display( 'Name', false, false ),
+							'theme_uri' => $theme_data->parent()->display( 'ThemeURI', false, false ),
 							'author'    => $theme_data->parent()->display( 'Author', false, false ),
 							'author_uri'=> $theme_data->parent()->display( 'AuthorURI', false, false ),
 						);
@@ -97,6 +103,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 				$plugins = array();
 				foreach ( get_option( 'active_plugins' ) as $plugin_path ) {
 					$plugin_info    = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin_path );
+
 					$slug           = str_replace( '/' . basename( $plugin_path ), '', $plugin_path );
 					$plugins[$slug] = array(
 						'version'    => $plugin_info['Version'],
@@ -135,7 +142,7 @@ if ( !class_exists( 'Yoast_Tracking' ) ) {
 				wp_remote_post( 'https://tracking.yoast.com/', $args );
 
 				// Store for a week, then push data again.
-				set_transient( 'yoast_tracking_cache', $data, 7 * 60 * 60 * 24 );
+				set_transient( 'yoast_tracking_cache', true, 7 * 60 * 60 * 24 );
 			}
 		}
 	}
@@ -153,11 +160,11 @@ function wpseo_tracking_additions( $options ) {
 	$opt = get_wpseo_options();
 
 	$options['wpseo'] = array(
-		'xml_sitemaps'          => isset( $opt['enablexmlsitemap'] ) ? intval( $opt['enablexmlsitemap'] ) : 0,
-		'force_rewrite'         => isset( $opt['forcerewritetitle'] ) ? intval( $opt['forcerewritetitle'] ) : 0,
-		'opengraph'             => isset( $opt['opengraph'] ) ? intval( $opt['opengraph'] ) : 0,
-		'twitter'               => isset( $opt['twitter'] ) ? intval( $opt['twitter'] ) : 0,
-		'strip_category_base'   => isset( $opt['stripcategorybase'] ) ? intval( $opt['stripcategorybase'] ) : 0,
+		'xml_sitemaps'          => isset( $opt['enablexmlsitemap'] ) ? 1 : 0,
+		'force_rewrite'         => isset( $opt['forcerewritetitle'] ) ? 1 : 0,
+		'opengraph'             => isset( $opt['opengraph'] ) ? 1 : 0,
+		'twitter'               => isset( $opt['twitter'] ) ? 1 : 0,
+		'strip_category_base'   => isset( $opt['stripcategorybase'] ) ? 1 : 0,
 		'on_front'              => get_option( 'show_on_front' ),
 	);
 	return $options;
