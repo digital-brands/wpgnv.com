@@ -98,7 +98,8 @@ function wpgnv_display_ideas() {
 		'post_type' => 'ideas',
 		'order' => 'DES',
 		'meta_key' => 'total-vote',
-		'orderby' => 'meta_value_num'
+		'orderby' => 'meta_value_num',
+		'posts_per_page' => -1
 	);  
 	$ideas_query = new WP_Query( $query_args );
 	?>
